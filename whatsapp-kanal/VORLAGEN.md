@@ -43,7 +43,7 @@ Das brauchst du:
 Dauert 2 Minuten. Kein Anschreiben nötig.
 ```
 
-## 3. Job-Post (Zeitarbeit/Überlassung — für deine AÜG-Kunden)
+## 3. Job-Post (Zeitarbeit — für Personaldienstleister als Kunden)
 
 ```
 🟢 SOFORT-START | Code: LOG-[XXX]
@@ -106,7 +106,7 @@ Aktuelle Jobs findest du hier im Kanal — täglich neu.
 bei Einstellung. Frag uns: [BUSINESS-NUMMER]
 ```
 
-## 7. Wissens-Post (Anerkennung — spielt dem Marokko-Kunden zu)
+## 7. Wissens-Post (Anerkennung ausländischer Abschlüsse)
 
 ```
 🌍 AUSLÄNDISCHER ABSCHLUSS? So arbeitest du in Deutschland
@@ -114,8 +114,8 @@ bei Einstellung. Frag uns: [BUSINESS-NUMMER]
 ▪️ Für Lager-Jobs brauchst du meist KEINE formale Anerkennung
 ▪️ Wichtig: Arbeitserlaubnis + Deutsch (oft reicht A2–B1)
 ▪️ Fachkräfte: Anerkennung läuft über anerkennung-in-deutschland.de
-▪️ Es gibt Arbeitgeber, die gezielt international einstellen
-   und beim Visum unterstützen — wir kennen sie. 😉
+▪️ Es gibt Arbeitgeber, die gezielt international
+   einstellen — hier im Kanal findest du sie zuerst.
 
 ✍️ Fragen? Schreib uns: [BUSINESS-NUMMER]
 ```
@@ -136,10 +136,10 @@ Umfrage-Frage-Ideen (1×/Woche eine):
 Offene Stellen? Wir posten sie hier kostenlos an
 [XXX]+ Abonnenten aus der Branche.
 
-✅ Kostenlos & unverbindlich
+✅ Aktuell kostenlos & unverbindlich
 ✅ Bewerber melden sich direkt per WhatsApp
-✅ Auf Wunsch: geprüfte Kandidaten & Zeitarbeitskräfte
-   über unsere Partner-Agenturen
+✅ Auf Wunsch: vorgeprüfte Kandidaten aus unserem Pool —
+   Sie zahlen nur bei Einstellung
 
 📞 Stelle melden: [BUSINESS-NUMMER]
 ```
@@ -184,9 +184,50 @@ vorschlagen können, kurz zu Ihrem Bedarf:
 Gern auch telefonisch — wann erreichen wir Sie am besten?
 ```
 
-**/einwilligung — vor Weitergabe an Partner (Pflicht!):**
+**/einwilligung — vor Weitergabe an den Arbeitgeber (Pflicht!):**
 ```
-Damit's schnell geht: Wir geben dein Profil an unsere
-Partner-Agentur weiter, die dich direkt für passende
-Stellen kontaktiert. Bist du damit einverstanden? (Ja/Nein)
+Damit's schnell geht: Wir geben dein Profil an [FIRMA]
+weiter, die dich direkt kontaktiert.
+Bist du damit einverstanden? (Ja/Nein)
+```
+
+---
+
+## 11. Job-Radar-Post (Startphase, kuratierte öffentliche Stelle)
+
+Eigene Kurzfassung, nie fremden Anzeigentext kopieren — immer mit Quellenlink:
+
+```
+📡 JOB-RADAR | Gefunden für euch
+
+[ROLLE] (m/w/d)
+📍 [STADT] | 💰 lt. Anzeige [XX] €/Std.
+🏢 Ausgeschrieben bei: [Portal]
+
+👉 Direkt zur Anzeige: [LINK]
+
+💡 Du willst, dass wir dich auf solche Stellen
+vorschlagen? Schick dein Kurzprofil: [BUSINESS-NUMMER]
+```
+
+## 12. Arbeitgeber-Erstansprache (E-Mail/LinkedIn/Telefon-Leitfaden)
+
+```
+Betreff: [X] Lager-Kandidaten per WhatsApp erreichen — [Stadt]
+
+Guten Tag [Name],
+
+Sie suchen aktuell [Rolle] — wir betreiben den WhatsApp-Kanal
+„Lager & Logistik Jobs" mit [X] Abonnenten aus der Branche
+in [Region]. Bewerber melden sich bei uns per Chat, ohne
+Bewerbungshürden.
+
+Mein Angebot: Wir posten Ihre Stelle aktuell kostenlos.
+Wenn Sie möchten, stellen wir Ihnen zusätzlich vorgeprüfte
+Kandidaten vor — Sie zahlen nur, wenn Sie einstellen
+([Betrag] € Erfolgsprämie, 30 Tage Bestandsgarantie).
+
+Haben Sie diese Woche 10 Minuten für ein kurzes Telefonat?
+
+[Signatur mit Kanal-Link + QR]
 ```
