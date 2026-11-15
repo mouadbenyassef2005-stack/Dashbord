@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #f7f4ee;
+  --color-surface: #ffffff;
+  --color-ink: #1b2a2a;
+  --color-muted: #66726e;
+  --color-line: #e7e1d5;
+  --color-primary: #1f5a52;
+  --color-primary-strong: #174640;
+  --color-primary-soft: #e4efec;
+  --color-gold: #a9803a;
+  --color-gold-soft: #f4ecdb;
+  --color-ok: #3a7a56;
+  --color-ok-soft: #e3f0e8;
+  --color-warn: #b5533c;
+  --color-warn-soft: #f8e7e2;
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-arabic: "Amiri Quran", "Noto Naskh Arabic", "Traditional Arabic", serif;
+  --shadow-card: 0 1px 2px rgb(27 42 42 / 0.04), 0 8px 24px -12px rgb(27 42 42 / 0.12);
+}
+
+html {
+  background: var(--color-bg);
+}
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.arabic {
+  font-family: var(--font-arabic);
+  direction: rtl;
+  unicode-bidi: isolate;
+  line-height: 1.9;
+  font-feature-settings: "liga", "calt", "mark", "mkmk";
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.45; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+.pulse-ring::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: var(--color-warn);
+  animation: pulse-ring 1.4s ease-out infinite;
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.rise { animation: rise 0.35s ease-out both; }
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
