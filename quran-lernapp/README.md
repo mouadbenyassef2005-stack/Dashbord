@@ -42,6 +42,13 @@ Dynamische Lektionen: `/lektion/personal`, `/lektion/transfer`, `/lektion/flagge
 - **Ehrlichkeit:** Fehlererkennung ist weiterhin die **Demo-Simulation** (überall markiert). Sobald ein `LiveAnalyzer` (`simulated:false`) angebunden ist, fließen dessen Segmente unverändert in Fehlerhistorie, Fehlerstellen und adaptive Auswahl ein.
 - Keine Kopie fremder Designs/Inhalte: Name, Optik, Texte und Mechaniken sind eigene Umsetzungen.
 
+## Verständnis-Check & weitere Lernmethoden
+
+- **Verständnis-Check nach jeder Lektion** (`CheckFlow`): 5 abwechslungsreiche Fragen aus dem Lektionsstoff, ohne Mikrofon. Bestanden ab 60 %; Wiederholen beliebig oft mit neuen Fragen. Falsche Stellen werden automatisch als unsicher vorgemerkt und landen in den persönlichen Übungen. „Später fortfahren“ blockiert nie – die Lektion bleibt dann mit „Check noch offen“ im Lernpfad markiert und lässt sich dort nachholen (`/lektion/check-<ID>`). XP-Bonus für die Lektion gibt es erst mit bestandenem Check.
+- **Fragearten** (`src/lib/quiz.ts`): *Lesen* (Lautschrift wählen), *Schreibweise erkennen* (Arabisch wählen), *Buchstaben-Detektiv* (gesuchten Buchstaben im Wort antippen), *Wort bauen* (Teile von rechts nach links zusammensetzen).
+- **Spiele & Tests** (`/spiele/…`, erreichbar im Lesetraining): **Buchstaben-Memory** (Buchstabe ↔ Name oder Form; schwächere Buchstaben kommen bevorzugt dran, keine Zeitwertung), Misch-Quiz, Buchstaben-Detektiv, Wörter bauen. Fehlgriffe fließen in Fehlerstatistik und adaptive Auswahl ein.
+- Quiz-/Memory-Ergebnisse zählen als *Erkennen* (Quelle `quiz` in der Fehlerhistorie) und stärken die Wiederholungsplanung, zählen aber nicht als „neu gelesen“ im Wochenziel.
+
 ## Architektur (Inhalt ↔ Logik ↔ UI getrennt)
 
 ```

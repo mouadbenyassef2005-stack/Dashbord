@@ -43,12 +43,60 @@ const ids = await page.$$eval('[data-testid^="lesson-"]', (els) => els.map((e) =
 ok(ids.length >= 25, `Lernpfad zeigt ${ids.length} Lektionen`);
 
 let retries = 0, chooseWrong = 0, shotsTaken = 0;
+let checksPassed = 0, checksLater = 0;
+async function answerQuizQuestion() {
+  if (await page.getByTestId("qopt-0").isVisible().catch(() => false)) await page.getByTestId("qopt-0").click();
+  else if (await page.getByTestId("cl-0").isVisible().catch(() => false)) { await page.getByTestId("cl-0").click(); await page.getByTestId("q-check").click(); }
+  else if (await page.getByTestId("piece-0").isVisible().catch(() => false)) {
+    const n = await page.locator('[data-testid^="piece-"]').count();
+    for (let i = 0; i < n; i++) await page.getByTestId(`piece-${i}`).click();
+    await page.getByTestId("q-check").click();
+  } else { await page.waitForTimeout(100); return false; }
+  await page.getByTestId("q-feedback").waitFor();
+  await page.getByTestId("q-next").click();
+  return true;
+}
+async function runCheck(id) {
+  await page.getByTestId("check-start").click();
+  let g = 0;
+  while (!(await page.getByTestId("check-result").isVisible().catch(() => false))) {
+    if (++g > 40) throw new Error("Check hängt in " + id);
+    await answerQuizQuestion();
+  }
+  if (id === "A1") await shot(page, "10b-check-result");
+  if (await page.getByTestId("check-continue").isVisible().catch(() => false)) { checksPassed++; await page.getByTestId("check-continue").click(); }
+  else { checksLater++; await page.getByTestId("check-later").click(); }
+}
+async function playGame(kind) {
+  await page.goto(`${BASE}/spiele/${kind}`);
+  if (kind === "memory") {
+    await page.getByTestId("memory-grid").waitFor();
+    const keys = await page.$$eval('[data-testid^="card-"]', (els) => els.map((e) => e.getAttribute("data-key")));
+    const seen = new Set();
+    for (let pass = 0; pass < 2; pass++) for (const k of [...new Set(keys)]) {
+      const idx = keys.map((x, i) => (x === k ? i : -1)).filter((i) => i >= 0);
+      if (idx.length === 2) { await page.getByTestId(`card-${idx[0]}`).click(); await page.getByTestId(`card-${idx[1]}`).click(); }
+    }
+    await page.getByTestId("memory-won").waitFor();
+    await shot(page, "20-memory-won");
+    return;
+  }
+  await page.waitForTimeout(400);
+  if (await page.getByText("Dafür fehlen noch passende Inhalte").isVisible().catch(() => false)) { console.log("  (leerer Zustand, zu wenig Inhalt – erwartet bei Teil-Durchlauf)"); await shot(page, `21-game-${kind}-leer`); return; }
+  let g = 0;
+  while (!(await page.getByTestId("game-result").isVisible().catch(() => false))) {
+    if (++g > 40) throw new Error("Spiel hängt: " + kind);
+    await answerQuizQuestion();
+  }
+  await shot(page, `21-game-${kind}`);
+}
 async function play(id, flag = false) {
   await page.goto(`${BASE}/lektion/${id}`);
   await page.getByTestId("start").click();
   let guard = 0;
   while (!(await page.getByTestId("done").isVisible().catch(() => false))) {
-    if (++guard > 80) throw new Error("Endlosschleife in " + id);
+    if (++guard > 120) throw new Error("Endlosschleife in " + id);
+    if (await page.getByTestId("check-intro").isVisible().catch(() => false)) { await runCheck(id); continue; }
     if (flag && (await page.getByTestId("flag").isVisible().catch(() => false))) { await page.getByTestId("flag").click(); flag = false; }
     const mic = page.getByTestId("mic");
     if (await mic.isVisible().catch(() => false)) {
@@ -89,6 +137,9 @@ for (const id of ids.slice(0, LIMIT)) {
   }
   if (id === "A4") { await play("personal"); ok(true, "persönliche Übung (adaptiv) durchgespielt"); }
 }
+ok(true, `Verständnis-Checks: ${checksPassed} bestanden, ${checksLater} später fortgesetzt`);
+for (const k of ["memory", "quiz", "detektiv", "bauen"]) { await playGame(k); ok(true, `Spiel „${k}“ durchgespielt`); }
+await page.goto(BASE + "/pfad"); await shot(page, "22-pfad-checks");
 ok(true, `${Math.min(LIMIT, ids.length)} Lektionen durchgespielt (Wiederholungen: ${retries}, falsche Choose-Antworten: ${chooseWrong})`);
 if (LIMIT >= ids.length) {
   await play("flagged"); ok(true, "Unsichere Stellen (Markierung) geübt");

@@ -12,10 +12,19 @@ export interface ItemStat {
   lastAt: number;
 }
 
+export interface LessonCheck {
+  score: number;
+  total: number;
+  passed: boolean;
+  at: number;
+}
+
 export interface LessonStat {
   completedAt: number;
   bestAccuracy: number;
   runs: number;
+  /** Verständnis-Check am Lektionsende (letzter Stand; bestanden bleibt bestanden) */
+  check?: LessonCheck;
 }
 
 /** Eintrag der Fehlerhistorie (jeder bewertete Versuch). */
@@ -26,7 +35,7 @@ export interface HistoryEntry {
   /** Fehlerstelle (Buchstabe) laut Analyse bzw. Demo */
   weak?: string;
   /** Quelle der Bewertung: simulierte Demo, Selbsteinschätzung oder (später) echte Analyse */
-  src: "demo" | "self" | "live";
+  src: "demo" | "self" | "live" | "quiz";
 }
 
 export interface DayStats {
@@ -125,7 +134,7 @@ export function recordAttempt(
   if (!passed) for (const k of weakKeys) errors[k] = (errors[k] ?? 0) + 1;
   const activity = passed ? { ...p.activity, [dayKey(now)]: (p.activity[dayKey(now)] ?? 0) + 1 } : p.activity;
   const history = [...p.history, { t: now, id: itemId, ok: passed, weak: weakKeys[0], src }].slice(-HISTORY_MAX);
-  const firstPassAt = passed && !p.firstPassAt[itemId] ? { ...p.firstPassAt, [itemId]: now } : p.firstPassAt;
+  const firstPassAt = passed && src !== "quiz" && !p.firstPassAt[itemId] ? { ...p.firstPassAt, [itemId]: now } : p.firstPassAt;
   // Unsicher-Markierung fällt weg, sobald das Item sicher sitzt.
   let flagged = p.flagged;
   if (passed && box >= 3 && flagged[itemId]) {
@@ -146,18 +155,36 @@ export function awardPass(p: Progress, firstTry: boolean, personal: boolean, now
   return withDay(p, now, { xp: firstTry ? XP_FIRST_TRY : XP_RETRY, firstTry: firstTry ? 1 : 0, personal: personal ? 1 : 0 });
 }
 
-export function completeLesson(p: Progress, lessonId: string, accuracy: number, now = Date.now()): Progress {
+export function completeLesson(p: Progress, lessonId: string, accuracy: number, now = Date.now(), check?: { score: number; total: number; passed: boolean }): Progress {
   const prev = p.lessons[lessonId];
+  const prevCheck = prev?.check;
+  const newCheck: LessonCheck | undefined = check
+    ? { ...check, at: now, passed: check.passed || !!prevCheck?.passed }
+    : prevCheck;
   const next: Progress = {
     ...p,
     lessons: {
       ...p.lessons,
-      [lessonId]: { completedAt: prev?.completedAt ?? now, bestAccuracy: Math.max(prev?.bestAccuracy ?? 0, accuracy), runs: (prev?.runs ?? 0) + 1 },
+      [lessonId]: { completedAt: prev?.completedAt ?? now, bestAccuracy: Math.max(prev?.bestAccuracy ?? 0, accuracy), runs: (prev?.runs ?? 0) + 1, check: newCheck },
     },
     lastLessonId: lessonId,
   };
-  return withDay(next, now, { xp: prev ? 0 : XP_LESSON, lessons: prev ? 0 : 1 });
+  // Lektionsbonus nur, wenn der Check bestanden wurde (Fortschritt = Können).
+  const bonus = !prev && check?.passed ? XP_LESSON : 0;
+  return withDay(next, now, { xp: bonus, lessons: prev ? 0 : 1 });
 }
+
+/** Nur das Check-Ergebnis einer Lektion nachtragen (z. B. späterer Check aus dem Lernpfad). */
+export function recordCheck(p: Progress, lessonId: string, check: { score: number; total: number; passed: boolean }, now = Date.now()): Progress {
+  const prev = p.lessons[lessonId];
+  if (!prev) return completeLesson(p, lessonId, 0, now, check);
+  const wasPassed = !!prev.check?.passed;
+  const next = completeLesson(p, lessonId, prev.bestAccuracy, now, check);
+  // Bonus nachträglich, wenn der Check erstmals bestanden wird
+  return !wasPassed && check.passed ? withDay(next, now, { xp: XP_LESSON }) : next;
+}
+
+export const lessonCheck = (p: Progress, id: string) => p.lessons[id]?.check;
 
 export function toggleFlag(p: Progress, itemId: string, now = Date.now()): Progress {
   const flagged = { ...p.flagged };

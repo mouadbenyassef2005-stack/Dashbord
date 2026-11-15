@@ -146,3 +146,62 @@ describe("Missionen, XP, Erfolge", () => {
     expect(p.weeklyGoal).toBe(20);
   });
 });
+
+import { lessonCheckQuestions, makeQuestions, rng, CHECK_QUESTIONS } from "@/lib/quiz";
+import { LESSON_BY_ID as LBI } from "@/content/lessons";
+import { createDeck, flip, isMismatch, closeMismatch, isWon, newGame } from "@/lib/memory";
+import { recordCheck, lessonCheck } from "@/lib/progress";
+
+describe("Verständnis-Check & Quiz", () => {
+  it("erzeugt für jede Lektion gültige, abwechslungsreiche Fragen", () => {
+    for (const l of LESSONS) {
+      const qs = lessonCheckQuestions(l, 42);
+      expect(qs.length, l.id).toBeGreaterThanOrEqual(Math.min(CHECK_QUESTIONS, 3));
+      for (const q of qs) {
+        if (q.kind === "pick-translit" || q.kind === "pick-arabic") {
+          expect(new Set(q.options).size, q.id).toBe(3);
+          expect(q.answer).toBeGreaterThanOrEqual(0);
+        }
+        if (q.kind === "find-letter") expect(q.correct.length).toBeGreaterThan(0);
+        if (q.kind === "build-word") expect([...q.pieces].sort()).toEqual([...q.target].sort());
+      }
+    }
+    const kinds = new Set(lessonCheckQuestions(LBI.get("H1")!, 7).map((q) => q.kind));
+    expect(kinds.size).toBeGreaterThan(1);
+  });
+  it("ist deterministisch mit Seed", () => {
+    const items = LBI.get("D2")!.items.filter((i) => i.kind === "read") as any[];
+    expect(makeQuestions(items, 5, 1).map((q) => q.id)).toEqual(makeQuestions(items, 5, 1).map((q) => q.id));
+    expect(rng(3)()).toBe(rng(3)());
+  });
+  it("Check-Ergebnis: Bonus nur bei Bestehen, bestanden bleibt bestanden", () => {
+    let p = completeLesson(DEFAULT_PROGRESS, "A1", 0.8, 1000, { score: 2, total: 5, passed: false });
+    expect(totalXp(p)).toBe(0);
+    expect(lessonCheck(p, "A1")?.passed).toBe(false);
+    p = recordCheck(p, "A1", { score: 4, total: 5, passed: true }, 2000);
+    expect(totalXp(p)).toBe(20);
+    p = recordCheck(p, "A1", { score: 1, total: 5, passed: false }, 3000);
+    expect(lessonCheck(p, "A1")?.passed).toBe(true);
+    expect(totalXp(p)).toBe(20);
+  });
+});
+
+describe("Memory", () => {
+  it("Paare finden, Fehlgriffe merken, Sieg erkennen", () => {
+    const cards = createDeck(["ب", "ت", "ث"], "name", 5);
+    expect(cards.length).toBe(6);
+    let s = newGame(cards);
+    const keys = cards.map((c) => c.key);
+    const a = keys.indexOf("ب"), b = keys.lastIndexOf("ب"), c = keys.indexOf("ت");
+    s = flip(flip(s, a), c);
+    expect(isMismatch(s)).toBe(true);
+    expect(s.missed).toContain("ب");
+    s = closeMismatch(s);
+    s = flip(flip(s, a), b);
+    expect(s.matched).toEqual(["ب"]);
+    expect(s.clean).not.toContain("ب");
+    for (const k of ["ت", "ث"]) s = flip(flip(s, keys.indexOf(k)), keys.lastIndexOf(k));
+    expect(isWon(s)).toBe(true);
+    expect(s.clean).toEqual(["ث"]); // ب und ت hatten einen Fehlgriff
+  });
+});

@@ -19,7 +19,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const path = usePathname();
   const router = useRouter();
   const { progress, hydrated } = useProgress();
-  const immersive = path.startsWith("/lektion") || path.startsWith("/onboarding");
+  const immersive = path.startsWith("/lektion") || path.startsWith("/spiele") || path.startsWith("/onboarding");
   const needsOnboarding = hydrated && !progress.onboarded;
   useEffect(() => {
     if (!immersive && needsOnboarding) router.replace("/onboarding");

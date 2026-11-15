@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import type { ChooseItem } from "@/content/types";
-import { ArabicText } from "../ArabicText";
+import { ArabicText, RichText } from "../ArabicText";
 import { IconArrow, IconCheck } from "../icons";
 import { Button, cx } from "../ui";
 
@@ -27,7 +27,7 @@ export function ChooseStep({ item, onAttempt, onPass, onDefer, canDefer }: Props
     <div className="flex flex-1 flex-col">
       <div className="grid flex-1 place-items-center rounded-3xl border border-line bg-surface px-5 py-8 text-center shadow-card">
         <div>
-          <p className="text-xl font-medium sm:text-2xl">{item.question}</p>
+          <p className="text-xl font-medium sm:text-2xl"><RichText text={item.question} /></p>
           {item.arabic && <div className="mt-3"><ArabicText text={item.arabic} size="lg" /></div>}
         </div>
       </div>
@@ -57,7 +57,7 @@ export function ChooseStep({ item, onAttempt, onPass, onDefer, canDefer }: Props
         <div className="rise mt-4" aria-live="polite">
           <p className={cx("flex items-start gap-2 text-[15px]", correct ? "text-ok" : "text-warn")}>
             {correct ? <IconCheck className="mt-0.5 size-5 shrink-0" /> : null}
-            <span>{correct ? "Richtig. " : "Nicht ganz. "}<span className="text-ink/75">{item.explanation}</span></span>
+            <span>{correct ? "Richtig. " : "Nicht ganz. "}<span className="text-ink/75"><RichText text={item.explanation ?? ""} /></span></span>
           </p>
           <div className="mt-3 grid grid-cols-2 gap-2">
             {correct ? (

@@ -1,4 +1,5 @@
 "use client";
+import { RichText } from "@/components/ArabicText";
 import Link from "next/link";
 import { MissionList } from "@/components/Missions";
 import { IconArrow, IconFlame, IconTrain } from "@/components/icons";
@@ -42,7 +43,7 @@ export default function Home() {
         <Card className="!bg-primary !text-white !border-primary-strong">
           <p className="text-xs font-medium uppercase tracking-wider text-white/70">{unit?.title} · {lesson.minutes} Min.</p>
           <h2 className="mt-2 text-2xl font-semibold leading-snug">{lesson.title}</h2>
-          <p className="mt-2 text-[15px] text-white/80"><span className="font-medium text-white">Lernziel:</span> {lesson.goal}</p>
+          <p className="mt-2 text-[15px] text-white/80"><span className="font-medium text-white">Lernziel:</span> <RichText text={lesson.goal} /></p>
           <ButtonLink href={`/lektion/${lesson.id}`} variant="outline" className="mt-5 w-full !border-white !bg-white !text-primary-strong sm:w-auto" data-testid="continue">
             {started ? "Fortsetzen" : "Lektion starten"} <IconArrow className="size-5" />
           </ButtonLink>

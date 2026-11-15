@@ -65,6 +65,7 @@ export function achievements(p: Progress): Achievement[] {
     mk("fatiha", "Al-Fātiḥa gelesen", "Schließe die Lektion zu Sure 1 ab.", isCompleted(p, "P4") ? 1 : 0, 1),
     mk("comeback", "Aus Fehlern gelernt", "Meistere 10 Übungen, die dir zuerst nicht gelangen.", retriesMastered, 10),
     mk("practice", "Dranbleiber", "Bestehe 100 Übungen insgesamt.", reviews, 100),
+    mk("checks", "Gründlich", "Besteh 5 Verständnis-Checks.", LESSONS.filter((l) => p.lessons[l.id]?.check?.passed).length, 5),
     mk("xp", "Fleißig", "Sammle 500 XP.", totalXp(p), 500),
     mk("path", "Stage 1 geschafft", "Schließe alle Lektionen von Stage 1 ab.", lessonsDone, LESSONS.length),
   ];

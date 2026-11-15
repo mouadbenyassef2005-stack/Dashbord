@@ -5,7 +5,7 @@ import { getAnalyzer, type AnalysisResult } from "@/lib/analysis";
 import { toClusters } from "@/lib/arabic";
 import { playReference, type Playback } from "@/lib/audio";
 import { classifyMicError, micSupported, startRecording, type ActiveRecording, type MicError } from "@/lib/recorder";
-import { ArabicText } from "../ArabicText";
+import { ArabicText, RichText } from "../ArabicText";
 import { IconArrow, IconCheck, IconMic, IconRepeat, IconSpeaker, IconStop } from "../icons";
 import { Button, Chip, DemoBadge, cx } from "../ui";
 import { ConsentDialog } from "./ConsentDialog";
@@ -156,7 +156,7 @@ export function ReadStep({ item, showHint, micConsent, onConsent, onAttempt, onP
         <div className="text-center">
           <ArabicText text={item.arabic} px={fontPx(clusters.length, item.arabic.length, phase === "result")} />
           {item.hint && (
-            <div className="mt-2 min-h-7">
+            <div className="mt-3 min-h-7">
               {hintOpen ? (
                 <button type="button" onClick={() => setHintOpen(false)} className="text-lg text-muted hover:text-ink" aria-label="Lautschrift ausblenden">
                   {item.hint}
@@ -246,7 +246,7 @@ export function ReadStep({ item, showHint, micConsent, onConsent, onAttempt, onP
                 <div className="mb-2 flex items-center gap-2">
                   {passed ? <IconCheck className="size-5 text-ok" /> : <span className="grid size-5 place-items-center rounded-full bg-warn text-xs font-bold text-white">!</span>}
                   <p className="font-semibold" data-testid="headline">
-                    {result ? result.headline : passed ? "Gut – als sicher markiert" : "Wir üben es nochmal"}
+                    {result ? <RichText text={result.headline} /> : passed ? "Gut – als sicher markiert" : "Wir üben es nochmal"}
                   </p>
                   {result?.simulated && <DemoBadge className="ml-auto" />}
                 </div>

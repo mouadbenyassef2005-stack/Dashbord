@@ -10,7 +10,7 @@ import { dayKey, isCompleted, isUnlocked, weeklyNew } from "@/lib/progress";
 import { READ_ITEM_BY_ID } from "@/lib/review";
 import { useProgress } from "@/lib/store";
 
-const SRC = { demo: "Demo-Bewertung", self: "Selbsteinschätzung", live: "Analyse" } as const;
+const SRC = { demo: "Demo-Bewertung", self: "Selbsteinschätzung", live: "Analyse", quiz: "Quiz" } as const;
 
 export default function Lesetraining() {
   const { progress: p, update } = useProgress();
@@ -67,6 +67,24 @@ export default function Lesetraining() {
           ) : <p className="mt-3 text-sm text-muted">Noch nichts markiert.</p>}
         </Card>
       </div>
+
+      <Card data-testid="games">
+        <h2 className="font-semibold">Spiele & Tests</h2>
+        <p className="mt-1 text-sm text-muted">Andere Wege, dasselbe zu festigen – ohne Mikrofon. Fehlgriffe landen automatisch in deinen persönlichen Übungen.</p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {[
+            ["memory", "Buchstaben-Memory", "Paare aus Buchstabe und Name oder Form finden."],
+            ["quiz", "Misch-Quiz", "Lesen, Schreibweise, Buchstaben, Wörter – gemischt."],
+            ["detektiv", "Buchstaben-Detektiv", "Gesuchte Buchstaben im Wort antippen."],
+            ["bauen", "Wörter bauen", "Wörter aus Teilen zusammensetzen."],
+          ].map(([k, t, d]) => (
+            <Link key={k} href={`/spiele/${k}`} data-testid={`game-${k}`} className="rounded-2xl border border-line p-4 transition hover:border-primary/50">
+              <p className="font-medium">{t}</p>
+              <p className="mt-0.5 text-sm text-muted">{d}</p>
+            </Link>
+          ))}
+        </div>
+      </Card>
 
       <Card>
         <h2 className="font-semibold">Mein Lesetrainingsziel</h2>

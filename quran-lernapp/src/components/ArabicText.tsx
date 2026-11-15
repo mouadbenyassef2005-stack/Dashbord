@@ -1,3 +1,4 @@
+"use client";
 import { cx } from "./ui";
 
 const sizes = {
@@ -11,8 +12,25 @@ const sizes = {
 /** Arabischer Text: RTL, Quran-geeignete Schrift, große Zeichen. */
 export function ArabicText({ text, size = "lg", className, px }: { text: string; size?: keyof typeof sizes; className?: string; px?: number }) {
   return (
-    <span dir="rtl" lang="ar" className={cx("arabic inline-block", !px && sizes[size], className)} style={px ? { fontSize: px, lineHeight: 1.75 } : undefined}>
+    <span dir="rtl" lang="ar" className={cx("arabic inline-block", !px && sizes[size], className)} style={px ? { fontSize: px, lineHeight: 2.1, paddingBottom: px * 0.12 } : undefined}>
       {text}
     </span>
+  );
+}
+
+const RUN = /([؀-ۿݐ-ݿ][؀-ۿݐ-ݿ‌‍ ]*[؀-ۿݐ-ݿ]|[؀-ۿݐ-ݿ])/g;
+
+/** Fließtext, in dem arabische Abschnitte automatisch in der Quran-Schrift gesetzt werden (sonst fehlen Zeichen/Harakat). */
+export function RichText({ text }: { text: string }) {
+  return (
+    <>
+      {text.split(RUN).map((part, i) =>
+        i % 2 === 1 ? (
+          <span key={i} dir="rtl" lang="ar" className="arabic inline-block align-middle text-[1.35em] leading-[1.6]">{part}</span>
+        ) : (
+          part
+        ),
+      )}
+    </>
   );
 }

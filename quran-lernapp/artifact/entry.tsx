@@ -8,12 +8,14 @@ import Erfolge from "@/app/erfolge/page";
 import Profil from "@/app/profil/page";
 import Woerter from "@/app/woerter/page";
 import Onboarding from "@/app/onboarding/page";
+import { GameLoader } from "@/components/games/GameLoader";
 import { usePath } from "./router";
 
 function Routes() {
   const path = usePath();
   let page;
-  if (path.startsWith("/lektion/")) page = <LessonLoader key={path} lessonId={path.slice(9)} />;
+  if (path.startsWith("/spiele/")) page = <GameLoader key={path} kind={path.slice(8)} />;
+  else if (path.startsWith("/lektion/")) page = <LessonLoader key={path} lessonId={path.slice(9)} />;
   else if (path === "/pfad") page = <Pfad />;
   else if (path === "/training") page = <Training />;
   else if (path === "/erfolge") page = <Erfolge />;

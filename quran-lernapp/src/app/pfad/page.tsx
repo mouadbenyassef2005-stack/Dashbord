@@ -1,15 +1,18 @@
 "use client";
+import { RichText } from "@/components/ArabicText";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { IconCheck, IconLock } from "@/components/icons";
 import { Card, Chip, PageHeader, cx } from "@/components/ui";
 import { FUTURE_STAGES, LESSONS, UNITS, unitLessons } from "@/content/lessons";
-import { completedCount, currentLessonId, isCompleted, isUnlocked, lessonMastery } from "@/lib/progress";
+import { completedCount, currentLessonId, isCompleted, isUnlocked, lessonCheck, lessonMastery } from "@/lib/progress";
 import { useProgress } from "@/lib/store";
 
 export default function Pfad() {
   const { progress: p } = useProgress();
   const cur = currentLessonId(p);
+  const router = useRouter();
   const [msg, setMsg] = useState<{ text: string; id: string } | null>(null);
 
   return (
@@ -51,7 +54,7 @@ export default function Pfad() {
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className={cx("font-medium", !open && "text-muted")}>{l.title}</p>
-                          <p className="mt-0.5 text-sm text-muted">{l.goal}</p>
+                          <p className="mt-0.5 text-sm text-muted"><RichText text={l.goal} /></p>
                         </div>
                         <span className="shrink-0 text-xs text-muted">{l.minutes} Min.</span>
                       </div>
@@ -60,6 +63,11 @@ export default function Pfad() {
                         <p className="mt-2 text-xs text-ok">
                           Abgeschlossen · {Math.round((p.lessons[l.id]?.bestAccuracy ?? 0) * 100)} % auf Anhieb · Sicherheit {Math.round(lessonMastery(p, l.id) * 100)} %
                           {lessonMastery(p, l.id) < 0.5 && <span className="ml-1 text-gold">· Auffrischen empfohlen</span>}
+                        </p>
+                      )}
+                      {done && (
+                        <p className="mt-1 text-xs" data-testid={`check-${l.id}`}>
+                          {lessonCheck(p, l.id)?.passed ? <span className="text-ok">Check bestanden ({lessonCheck(p, l.id)!.score}/{lessonCheck(p, l.id)!.total})</span> : <span className="text-gold">Check noch offen – <span role="link" tabIndex={0} className="cursor-pointer font-medium underline underline-offset-2" onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/lektion/check-${l.id}`); }} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); router.push(`/lektion/check-${l.id}`); } }}>jetzt machen</span></span>}
                         </p>
                       )}
                     </>
