@@ -37,19 +37,19 @@ ok(true, "Onboarding abgeschlossen, Dashboard sichtbar");
 await shot(page, "04-dashboard");
 
 // 2. Alle Lektionen durchspielen
-const lessonIds = await page.evaluate(async () => null);
 await page.goto(BASE + "/pfad");
 await shot(page, "05-pfad");
 const ids = await page.$$eval('[data-testid^="lesson-"]', (els) => els.map((e) => e.getAttribute("data-testid").replace("lesson-", "")));
 ok(ids.length >= 25, `Lernpfad zeigt ${ids.length} Lektionen`);
 
 let retries = 0, chooseWrong = 0, shotsTaken = 0;
-for (const id of ids) {
+async function play(id, flag = false) {
   await page.goto(`${BASE}/lektion/${id}`);
   await page.getByTestId("start").click();
   let guard = 0;
   while (!(await page.getByTestId("done").isVisible().catch(() => false))) {
-    if (++guard > 60) throw new Error("Endlosschleife in " + id);
+    if (++guard > 80) throw new Error("Endlosschleife in " + id);
+    if (flag && (await page.getByTestId("flag").isVisible().catch(() => false))) { await page.getByTestId("flag").click(); flag = false; }
     const mic = page.getByTestId("mic");
     if (await mic.isVisible().catch(() => false)) {
       await mic.click();
@@ -65,7 +65,7 @@ for (const id of ids) {
         await next.click();
       } else {
         retries++;
-        if (shotsTaken === 2 || (id === "C1" && shotsTaken < 4)) { await shot(page, "09-result-retry"); shotsTaken = 4; }
+        if (id === "C1" && shotsTaken < 4) { await shot(page, "09-result-retry"); shotsTaken = 4; }
         await page.getByTestId("retry").click();
       }
     } else if (await page.getByTestId("opt-0").isVisible().catch(() => false)) {
@@ -78,30 +78,43 @@ for (const id of ids) {
     } else await page.waitForTimeout(100);
   }
   console.log("  lesson", id, "done", new Date().toISOString().slice(11, 19));
-  if (id === "A1") await shot(page, "10-done");
-  if (id === "W1") await shot(page, "11-words-lesson");
-  if (id === "P1") await shot(page, "12-passage");
+  if (id === "A1" || id === "personal" || id === "transfer") await shot(page, `10-done-${id}`);
 }
-ok(true, `alle ${ids.length} Lektionen durchgespielt (Wiederholungen: ${retries}, falsche Choose-Antworten: ${chooseWrong})`);
+const LIMIT = Number(process.env.LESSONS ?? ids.length);
+for (const id of ids.slice(0, LIMIT)) {
+  await play(id, id === "A2");
+  if (id === "A2") {
+    await page.goto(BASE + "/"); await page.getByTestId("personal-card").waitFor(); await shot(page, "11-home-personal");
+    await page.goto(BASE + "/training"); await page.getByTestId("history").waitFor(); await shot(page, "12-training");
+  }
+  if (id === "A4") { await play("personal"); ok(true, "persönliche Übung (adaptiv) durchgespielt"); }
+}
+ok(true, `${Math.min(LIMIT, ids.length)} Lektionen durchgespielt (Wiederholungen: ${retries}, falsche Choose-Antworten: ${chooseWrong})`);
+if (LIMIT >= ids.length) {
+  await play("flagged"); ok(true, "Unsichere Stellen (Markierung) geübt");
+  await play("transfer"); ok(true, "Unbekannte Wörter (Transfer) gelesen");
+}
 
 // 3. Fortschritt persistiert
 await page.goto(BASE + "/");
-await page.getByText("Stage 1 abgeschlossen").waitFor();
-await shot(page, "13-dashboard-done");
+await page.getByTestId("missions").waitFor();
+await shot(page, "13-home");
 await page.reload();
-await page.getByText("Stage 1 abgeschlossen").waitFor();
+await page.getByTestId("missions").waitFor();
 ok(true, "Fortschritt nach Reload vorhanden");
-await page.goto(BASE + "/fortschritt");
-await page.getByText("Wiederholungsbedarf").waitFor();
-await shot(page, "14-fortschritt");
+await page.goto(BASE + "/erfolge");
+await page.getByTestId("badges").waitFor();
+await shot(page, "14-erfolge");
+await page.goto(BASE + "/profil");
+await page.getByRole("heading", { name: "Lernstand" }).waitFor();
+await shot(page, "14b-profil");
+await page.goto(BASE + "/training");
+await page.getByTestId("history").waitFor();
+await shot(page, "14c-training");
 await page.goto(BASE + "/woerter");
 await page.getByText("Wortdatenbank").first().waitFor();
 await page.locator("button[aria-expanded]").first().click();
 await shot(page, "15-woerter");
-await page.goto(BASE + "/lektion/review");
-await shot(page, "16-review");
-await page.goto(BASE + "/einstellungen");
-await shot(page, "17-einstellungen");
 
 const real = errors.filter((e) => !/favicon/.test(e));
 ok(real.length === 0, "keine Konsolenfehler" + (real.length ? ": " + real.join(" | ") : ""));

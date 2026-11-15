@@ -46,7 +46,12 @@ export function uniqueWordsOf(surahId: number): QuranWord[] {
 }
 
 /** Lernbare Wörter: je Sure das erste Vorkommen jedes Wortes (entspricht den Wort-Lektionen). */
-export const UNIQUE_WORDS: QuranWord[] = SURAHS.flatMap((s) => uniqueWordsOf(s.id));
+/** Suren des Lernpfads (Wort-Lektionen + Passagen). */
+export const PATH_SURAHS = [1, 112, 108, 103];
+/** Weitere kurze Suren: dienen als „unbekannte Wörter“ für das Lesetraining (Transfer). */
+export const TRANSFER_SURAHS = [106, 105, 113, 114, 110, 109];
+export const UNIQUE_WORDS: QuranWord[] = PATH_SURAHS.flatMap((id) => uniqueWordsOf(id));
+export const TRANSFER_WORDS: QuranWord[] = TRANSFER_SURAHS.flatMap((id) => uniqueWordsOf(id));
 
 export interface Ayah {
   id: string; // "112:1"

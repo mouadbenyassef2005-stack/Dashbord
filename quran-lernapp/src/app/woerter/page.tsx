@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { ArabicText } from "@/components/ArabicText";
 import { Card, Chip, PageHeader, cx } from "@/components/ui";
-import { QURAN_SOURCE_INFO, UNIQUE_WORDS } from "@/content/quran";
+import { QURAN_SOURCE_INFO, TRANSFER_WORDS, UNIQUE_WORDS } from "@/content/quran";
 import type { QuranWord } from "@/content/types";
 import { statusOf, type Status } from "@/lib/progress";
 import { useProgress } from "@/lib/store";
@@ -20,12 +20,12 @@ export default function Woerter() {
   const [filter, setFilter] = useState<Status | "all">("all");
   const [open, setOpen] = useState<string | null>(null);
 
-  const unique = UNIQUE_WORDS;
+  const unique = [...UNIQUE_WORDS, ...TRANSFER_WORDS.filter((w) => p.items[`w:${w.id}`])];
   const list = unique.filter((w) => filter === "all" || statusOf(p, `w:${w.id}`) === filter);
 
   return (
     <div>
-      <PageHeader title="Wortdatenbank" subtitle={`${unique.length} Wörter aus den Suren des Lernpfads – mit Fundstelle.`} />
+      <PageHeader title="Wortdatenbank" subtitle={`${unique.length} Wörter – Lernpfad-Suren plus alle Transfer-Wörter, die du schon geübt hast. Jeweils mit Fundstelle.`} />
       <div className="mb-5 flex flex-wrap gap-2" role="tablist" aria-label="Filter">
         {FILTERS.map((f) => (
           <button key={f.id} role="tab" aria-selected={filter === f.id} onClick={() => setFilter(f.id)} className={cx("rounded-full px-4 py-2 text-sm font-medium transition", filter === f.id ? "bg-primary text-white" : "bg-surface text-ink/70 border border-line hover:border-primary/40")}>{f.label}</button>

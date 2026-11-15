@@ -24,13 +24,15 @@ interface Props {
   showHint: boolean;
   micConsent: boolean;
   onConsent: () => void;
-  onAttempt: (passed: boolean, weakKeys: string[]) => void;
+  onAttempt: (passed: boolean, weakKeys: string[], src: "demo" | "self" | "live") => void;
+  flagged: boolean;
+  onToggleFlag: () => void;
   onPass: () => void;
   onDefer: () => void;
   canDefer: boolean;
 }
 
-export function ReadStep({ item, showHint, micConsent, onConsent, onAttempt, onPass, onDefer, canDefer }: Props) {
+export function ReadStep({ item, showHint, micConsent, onConsent, onAttempt, onPass, onDefer, canDefer, flagged, onToggleFlag }: Props) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [level, setLevel] = useState(0);
   const [elapsed, setElapsed] = useState(0);
@@ -85,7 +87,7 @@ export function ReadStep({ item, showHint, micConsent, onConsent, onAttempt, onP
     setResult(res);
     if (res.status === "ok") {
       setAttempt(nextAttempt);
-      onAttempt(res.passed, res.passed ? [] : res.focus ? [res.focus.key] : []);
+      onAttempt(res.passed, res.passed ? [] : res.focus ? [res.focus.key] : [], res.simulated ? "demo" : "live");
     }
     setPhase("result");
   }, [attempt, item, onAttempt]);
@@ -129,7 +131,7 @@ export function ReadStep({ item, showHint, micConsent, onConsent, onAttempt, onP
 
   const selfAssess = (ok: boolean) => {
     setSelfResult(ok);
-    onAttempt(ok, ok ? [] : []);
+    onAttempt(ok, [], "self");
     setPhase("result");
   };
 
@@ -143,6 +145,10 @@ export function ReadStep({ item, showHint, micConsent, onConsent, onAttempt, onP
       <div className="mb-3 flex flex-wrap items-center gap-2">
         {item.prompt && <p className="text-[15px] text-muted">{item.prompt}</p>}
         {item.ref && <Chip tone="primary">Quran {item.ref}</Chip>}
+        <button type="button" onClick={onToggleFlag} aria-pressed={flagged} data-testid="flag" className={cx("ml-auto inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition", flagged ? "border-gold bg-gold-soft text-gold" : "border-line text-muted hover:text-ink")}>
+          <svg viewBox="0 0 24 24" className="size-3.5" fill={flagged ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden><path d="M6 3v18M6 4h11l-2 4 2 4H6" /></svg>
+          {flagged ? "Als unsicher markiert" : "Unsicher markieren"}
+        </button>
       </div>
 
       {/* Arabischer Text */}

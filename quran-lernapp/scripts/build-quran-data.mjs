@@ -8,7 +8,7 @@ const dir = require.resolve("quran-json/package.json").replace("package.json", "
 const quran = JSON.parse(readFileSync(dir + "quran.json", "utf8"));
 const translit = JSON.parse(readFileSync(dir + "quran_transliteration.json", "utf8"));
 
-const SURAHS = [1, 112, 108, 103];
+const SURAHS = [1, 112, 108, 103, 106, 105, 113, 114, 110, 109];
 const out = {
   source: {
     arabic: "Uthmani-Text aus quran-json 3.1.2 (The Noble Qur'an Encyclopedia, quranenc.com)",

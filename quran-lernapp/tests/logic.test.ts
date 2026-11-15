@@ -74,3 +74,75 @@ describe("Demo-Analyse", () => {
     expect((await a.analyze({ item, attempt: 2, signal: sig })).passed).toBe(true);
   });
 });
+
+import { buildPersonalPlan, buildTransfer, buildDynamic } from "@/lib/adaptive";
+import { dailyMissions } from "@/lib/missions";
+import { achievements, competence, competenceLevel } from "@/lib/achievements";
+import { awardPass, longestStreak, lessonMastery, toggleFlag, totalXp, weeklyNew, migrate } from "@/lib/progress";
+
+describe("Adaptive Übungen", () => {
+  const T = 1_800_000_000_000;
+  it("ist leer ohne Lernhistorie", () => {
+    expect(buildPersonalPlan(DEFAULT_PROGRESS, 8, T)).toEqual([]);
+    expect(buildDynamic("personal", DEFAULT_PROGRESS)).toBeNull();
+  });
+  it("priorisiert markierte, fällige und fehlerhafte Items mit Begründung", () => {
+    let p = recordAttempt(DEFAULT_PROGRESS, "l:ث", false, ["ث"], T - 1000);
+    p = recordAttempt(p, "l:ب", true, [], T - 1000);
+    p = toggleFlag(p, "l:ب", T);
+    const plan = buildPersonalPlan(p, 8, T);
+    expect(plan.map((x) => x.item.id)).toContain("l:ث");
+    expect(plan.map((x) => x.item.id)).toContain("l:ب"); // markiert
+    expect(plan[0].item.id).toBe("l:ث"); // fällig + Fehler schlägt Markierung allein
+    expect(plan.find((x) => x.item.id === "l:ث")!.reasons.length).toBeGreaterThan(0);
+  });
+  it("sicher sitzende Items erscheinen nicht", () => {
+    let p = DEFAULT_PROGRESS;
+    for (let i = 0; i < 4; i++) p = recordAttempt(p, "l:ب", true, [], T);
+    expect(buildPersonalPlan(p, 8, T).map((x) => x.item.id)).not.toContain("l:ب");
+  });
+  it("Transfer-Wörter erst nach Vokal-Lektionen und nur mit bekannten Buchstaben", () => {
+    expect(buildTransfer(DEFAULT_PROGRESS).lesson).toBeNull();
+    const p = { ...DEFAULT_PROGRESS, startLessonId: "D1" };
+    const t = buildTransfer(p);
+    expect(t.lesson).not.toBeNull();
+    expect(t.lesson!.items.every((i) => i.kind === "read" && i.id.startsWith("w:"))).toBe(true);
+  });
+});
+
+describe("Missionen, XP, Erfolge", () => {
+  it("Missionen: Tagesziel + 2, stabil am selben Tag, Fortschritt gedeckelt", () => {
+    const now = new Date(2026, 5, 10, 10).getTime();
+    const a = dailyMissions(DEFAULT_PROGRESS, now);
+    expect(a.length).toBe(3);
+    expect(a[0].id).toBe("goal");
+    expect(dailyMissions(DEFAULT_PROGRESS, now + 3600_000).map((m) => m.id)).toEqual(a.map((m) => m.id));
+    let p = DEFAULT_PROGRESS;
+    for (let i = 0; i < 15; i++) p = recordAttempt(p, "l:ب" + i, true, [], now);
+    const m = dailyMissions(p, now)[0];
+    expect(m.done).toBe(true);
+    expect(m.progress).toBe(m.target);
+  });
+  it("XP nur für Aktivität; Kompetenz nur für sicher Gelesenes", () => {
+    let p = awardPass(DEFAULT_PROGRESS, true, false, 1000);
+    p = awardPass(p, false, false, 1000);
+    expect(totalXp(p)).toBe(15);
+    expect(competenceLevel(competence(p))).toBe(0);
+    for (let i = 0; i < 4; i++) p = recordAttempt(p, "l:ب", true, [], 1000);
+    expect(competence(p).letters).toBe(1);
+  });
+  it("Lektions-Sicherheit & Historie & Wochenziel", () => {
+    let p = recordAttempt(DEFAULT_PROGRESS, "l:ا", true, [], 1000, "self");
+    expect(p.history[0]).toMatchObject({ id: "l:ا", ok: true, src: "self" });
+    expect(lessonMastery(p, "A1")).toBe(0);
+    expect(weeklyNew(p, 1000 + 86400000)).toBe(1);
+    expect(achievements(p).length).toBeGreaterThan(8);
+    expect(longestStreak(p)).toBe(1);
+  });
+  it("migriert alte v1-Daten", () => {
+    const p = migrate({ v: 1, onboarded: true, items: {}, lessons: {}, errors: {}, activity: {}, settings: { showHint: true, unlockAll: false }, startLessonId: "A1", dailyGoal: 10, micConsent: false, level: null, placement: null });
+    expect(p.v).toBe(2);
+    expect(p.history).toEqual([]);
+    expect(p.weeklyGoal).toBe(20);
+  });
+});

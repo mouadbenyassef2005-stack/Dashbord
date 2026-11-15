@@ -329,7 +329,7 @@ add({
 });
 
 /* --- I: Quranische Wörter (aus verifizierter Quelle) --- */
-function wordItem(id: string): ReadItem {
+export function wordItem(id: string): ReadItem {
   const w = WORD_BY_ID.get(id)!;
   return {
     id: `w:${w.id}`,

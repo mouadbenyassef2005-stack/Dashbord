@@ -14,3 +14,6 @@ export const IconChart = ({ className = "size-6" }: P) => (<svg {...base} classN
 export const IconBook = ({ className = "size-6" }: P) => (<svg {...base} className={className}><path d="M5 4h10a4 4 0 0 1 4 4v12H9a4 4 0 0 1-4-4V4Z" /><path d="M5 16a4 4 0 0 1 4-4h10" /></svg>);
 export const IconGear = ({ className = "size-6" }: P) => (<svg {...base} className={className}><circle cx="12" cy="12" r="3" /><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8" /></svg>);
 export const IconFlame = ({ className = "size-5" }: P) => (<svg {...base} className={className}><path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 2.5 1.5 2.5C10 8.5 11 6 12 3Z" /></svg>);
+export const IconTrophy = ({ className = "size-6" }: P) => (<svg {...base} className={className}><path d="M8 4h8v5a4 4 0 0 1-8 0V4ZM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8.5 20h7M10 17h4" /></svg>);
+export const IconUser = ({ className = "size-6" }: P) => (<svg {...base} className={className}><circle cx="12" cy="8" r="3.5" /><path d="M5 20a7 7 0 0 1 14 0" /></svg>);
+export const IconTrain = ({ className = "size-6" }: P) => (<svg {...base} className={className}><rect x="9" y="3" width="6" height="10" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8" /></svg>);

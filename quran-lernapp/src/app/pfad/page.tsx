@@ -4,18 +4,23 @@ import { useState } from "react";
 import { IconCheck, IconLock } from "@/components/icons";
 import { Card, Chip, PageHeader, cx } from "@/components/ui";
 import { FUTURE_STAGES, LESSONS, UNITS, unitLessons } from "@/content/lessons";
-import { completedCount, currentLessonId, isCompleted, isUnlocked } from "@/lib/progress";
+import { completedCount, currentLessonId, isCompleted, isUnlocked, lessonMastery } from "@/lib/progress";
 import { useProgress } from "@/lib/store";
 
 export default function Pfad() {
   const { progress: p } = useProgress();
   const cur = currentLessonId(p);
-  const [msg, setMsg] = useState<string | null>(null);
+  const [msg, setMsg] = useState<{ text: string; id: string } | null>(null);
 
   return (
     <div className="mx-auto max-w-2xl">
       <PageHeader title="Lernpfad" subtitle={`Stage 1 · Lesen lernen — ${completedCount(p)} von ${LESSONS.length} Lektionen`} />
-      {msg && <div role="status" className="mb-4 rounded-2xl bg-gold-soft p-3 text-sm">{msg}</div>}
+      {msg && (
+        <div role="status" className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-gold-soft p-3 text-sm">
+          <span>{msg.text}</span>
+          <Link href={`/lektion/${msg.id}`} className="font-medium text-primary underline-offset-4 hover:underline" data-testid="open-anyway">Trotzdem öffnen</Link>
+        </div>
+      )}
 
       <ol className="space-y-9">
         {UNITS.map((u, ui) => {
@@ -29,7 +34,7 @@ export default function Pfad() {
                   <h2 className="text-lg font-semibold">{u.title}</h2>
                   <p className="text-sm text-muted">{u.summary}</p>
                 </div>
-                <Chip tone={doneInUnit === ls.length ? "ok" : "neutral"}>{doneInUnit}/{ls.length}</Chip>
+                <div className="flex flex-col items-end gap-1"><Chip tone={doneInUnit === ls.length ? "ok" : "neutral"}>{doneInUnit}/{ls.length}</Chip>{!isUnlocked(p, ls[0].id) && <Chip>noch gesperrt</Chip>}</div>
               </div>
               <ul className="relative ml-5 space-y-3 border-l-2 border-line pl-7">
                 {ls.map((l) => {
@@ -51,7 +56,12 @@ export default function Pfad() {
                         <span className="shrink-0 text-xs text-muted">{l.minutes} Min.</span>
                       </div>
                       {isCur && <Chip tone="primary" className="mt-2">Nächster Schritt</Chip>}
-                      {done && <p className="mt-2 text-xs text-ok">Abgeschlossen · {Math.round((p.lessons[l.id]?.bestAccuracy ?? 0) * 100)} % beim ersten Versuch</p>}
+                      {done && (
+                        <p className="mt-2 text-xs text-ok">
+                          Abgeschlossen · {Math.round((p.lessons[l.id]?.bestAccuracy ?? 0) * 100)} % auf Anhieb · Sicherheit {Math.round(lessonMastery(p, l.id) * 100)} %
+                          {lessonMastery(p, l.id) < 0.5 && <span className="ml-1 text-gold">· Auffrischen empfohlen</span>}
+                        </p>
+                      )}
                     </>
                   );
                   const cls = cx("relative block w-full rounded-2xl border p-4 text-left transition", isCur ? "border-primary bg-primary-soft/50 shadow-card" : "border-line bg-surface", open ? "hover:border-primary/50" : "opacity-70");
@@ -60,7 +70,7 @@ export default function Pfad() {
                       {open ? (
                         <Link href={`/lektion/${l.id}`} className={cls} data-testid={`lesson-${l.id}`}>{inner}</Link>
                       ) : (
-                        <button type="button" className={cls} onClick={() => setMsg(`Schließe zuerst „${prev.title}“ ab, um diese Lektion freizuschalten.`)} data-testid={`lesson-${l.id}`} aria-disabled>
+                        <button type="button" className={cls} onClick={() => setMsg({ text: `Empfohlen: erst „${prev.title}“ abschließen. Du kannst trotzdem einsteigen.`, id: l.id })} data-testid={`lesson-${l.id}`} aria-disabled>
                           {inner}
                         </button>
                       )}

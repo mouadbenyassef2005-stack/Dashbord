@@ -18,18 +18,29 @@ node scripts/e2e.mjs http://localhost:3100 ./screenshots   # Playwright: spielt 
 
 Mikrofon braucht `https://` oder `localhost`. Ohne Mikrofon gibt es die Selbsteinschätzung („Sicher gelesen / Noch unsicher“).
 
-## Bildschirme
+## Fünf Hauptbereiche
 
-| Route | Inhalt |
-|---|---|
-| `/onboarding` | Begrüßung, 5-Fragen-Einstufung (oder überspringen), Niveauwahl, Tagesziel |
-| `/` | Dashboard: nächster Schritt, Stage-1-Fortschritt, Tagesziel, Wiederholung, gelernte Inhalte |
-| `/pfad` | Visueller Lernpfad: 10 Einheiten, 29 Lektionen, Sperr-/Abschlussstatus, Stage-2/3-Vorschau |
-| `/lektion/[id]` | **Interaktive Lektion**: Intro mit Lernziel → Anhören → Sprechen → Feedback → Wiederholen → Weiter |
-| `/lektion/review` | Dynamische Wiederholung fälliger/schwieriger Übungen |
-| `/fortschritt` | Lektionen je Einheit, Buchstaben-Raster, Wörter, Fehlerstellen, Wiederholungsbedarf, 7-Tage-Aktivität |
-| `/woerter` | Wortdatenbank (Uthmani, Transliteration, Fundstelle, Buchstaben/Harakat, Schwierigkeit, Audio-Status, Lernstatus) |
-| `/einstellungen` | Lautschrift, Mikrofon-Einwilligung, Testmodus „alle freischalten“, Tagesziel, Reset, Quellen |
+| Bereich | Route | Inhalt |
+|---|---|---|
+| **Home** | `/` | Nächster Schritt, Tagesziel + 3 tägliche Missionen, persönliche Übung, Wochenziel, Kompetenz, Streak/XP |
+| **Lernpfad** | `/pfad` | 10 Einheiten, 29 Lektionen, Freischaltung der Reihe nach (mit „Trotzdem öffnen“), Sicherheit je Lektion, Stage-2/3-Vorschau |
+| **Lesetraining** | `/training` | Persönliche Übung (adaptiv), unbekannte Wörter lesen (Transfer), unsichere Stellen, Wochenziel, Passagen, **Fehlerhistorie**; Unterseite `/woerter` (Wortdatenbank) |
+| **Erfolge** | `/erfolge` | Lesestufe (aus sicherem Können), Streak/Rekord, XP, 12 Abzeichen mit Fortschritt, 7-Tage-Aktivität |
+| **Profil** | `/profil` | Name, Ziele, Lernstand je Einheit, Buchstaben-Raster, Fehlerstellen, Einstellungen, „Was ist Demo?“, Reset |
+
+Dazu: `/onboarding` (Einstufung) und `/lektion/[id]` – die **interaktive Lektion** (Intro mit Lernziel → Anhören → Sprechen → Feedback → Wiederholen → Weiter).
+Dynamische Lektionen: `/lektion/personal`, `/lektion/transfer`, `/lektion/flagged`.
+
+## Lern- und Interaktionssystem (Duolingo-/Tarteel-inspiriert, eigene Umsetzung)
+
+- **Kurze Lektionen, sofortiges Feedback, Tagesziel, Streak, Missionen, XP** – dezent, ohne Herzen, ohne Sperren durch Fehler. Fehler → motivierender Hinweis + „Teil anhören“ + „Nochmal üben“.
+- **Kompetenz statt Aktivität:** XP zählen Fleiß. Die *Lesestufe* und die Lektions-„Sicherheit“ basieren nur auf Items, die mehrfach richtig gelesen wurden (Leitner-Box ≥ 3). Ein bloßes Durchklicken hebt sie nicht an.
+- **Adaptive Engine** (`src/lib/adaptive.ts`): bewertet jedes geübte Item nach Fälligkeit, Fehlerquote, Box, Markierung und Fehler-Buchstaben und zeigt je Übung die **Begründung** („Zur Wiederholung fällig“, „Enthält Fehlerstelle Thā“).
+- **Transfer:** unbekannte Quran-Wörter aus Suren außerhalb des Lernpfads (106, 105, 113, 114, 110, 109), nur mit Buchstaben, die der Nutzer kennt – Ziel: selbstständiges Lesen.
+- **Fehlerhistorie & Markierung:** jeder bewertete Versuch wird mit Quelle (`demo` / `self` / `live`) gespeichert; Items lassen sich als unsicher markieren, die Markierung fällt weg, sobald sie sicher sitzen.
+- **Persönliche Ziele:** Tagesziel (Übungen) und Lesetrainingsziel (neue Lese-Einheiten pro Woche).
+- **Ehrlichkeit:** Fehlererkennung ist weiterhin die **Demo-Simulation** (überall markiert). Sobald ein `LiveAnalyzer` (`simulated:false`) angebunden ist, fließen dessen Segmente unverändert in Fehlerhistorie, Fehlerstellen und adaptive Auswahl ein.
+- Keine Kopie fremder Designs/Inhalte: Name, Optik, Texte und Mechaniken sind eigene Umsetzungen.
 
 ## Architektur (Inhalt ↔ Logik ↔ UI getrennt)
 
@@ -41,7 +52,10 @@ src/content/        Lerninhalte (reine Daten + Builder)
   generated/          von scripts/build-quran-data.mjs erzeugt (nie von Hand editieren)
 src/lib/            Lernlogik (UI-frei, getestet)
   engine.ts           Lektions-Session: Warteschlange, „später“, Genauigkeit
-  progress.ts         Fortschrittsmodell, Freischaltung, Leitner-Wiederholung, Streak, Fehlerstatistik
+  progress.ts         Fortschrittsmodell v2, Freischaltung, Leitner, Streak, XP, Historie, Markierungen, Wochenziel
+  adaptive.ts         Persönliche Übung, Transfer-Wörter, unsichere Stellen
+  missions.ts         Tägliche Missionen (datumsstabil)
+  achievements.ts     Kompetenz-Level + Abzeichen (abgeleitet, nichts doppelt gespeichert)
   store.ts            Persistenz (localStorage, useSyncExternalStore, versioniert `v:1`)
   arabic.ts           Zerlegung in Buchstabe+Zeichen, Schwierigkeitsgrad
   recorder.ts         Mikrofon (getUserMedia, MediaRecorder, Pegel) – nur lokal
@@ -64,7 +78,7 @@ Empfehlung: ein Sprecher, einheitliches Studio-Setup, 1 Datei je Item (Buchstabe
 
 ## Quran-Text & Quellen
 - Arabisch (Uthmani): npm-Paket `quran-json@3.1.2` (Daten: The Noble Qur’an Encyclopedia), Transliteration: Tanzil.net – Lizenz **CC BY-SA 4.0**.
-- Nichts wurde von Hand getippt: `npm run data` erzeugt `quran-source.json` für Sure 1, 112, 108, 103 (Fundstelle Sure:Ayah:Wort).
+- Nichts wurde von Hand getippt: `npm run data` erzeugt `quran-source.json` für Sure 1, 112, 108, 103 (Lernpfad) sowie 106, 105, 113, 114, 110, 109 (Transfer) (Fundstelle Sure:Ayah:Wort).
 - Wortweise Transliteration nur, wenn Wortzahl von Arabisch und Transliteration exakt übereinstimmen; Tanzils „AA“ wird zu „ʿ“.
 - Die Zählung der Fatiha folgt der Quelle (Basmala = Ayah 1, insgesamt 7 Ayat).
 - **Vor Produktivstart:** Text gegen eine zweite, kollationierte Mushaf-Quelle prüfen lassen (Fachperson).

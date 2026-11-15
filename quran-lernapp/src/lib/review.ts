@@ -1,10 +1,12 @@
-import { LESSONS } from "@/content/lessons";
+import { LESSONS, wordItem } from "@/content/lessons";
+import { TRANSFER_WORDS } from "@/content/quran";
 import type { Lesson, ReadItem } from "@/content/types";
 import { dueItemIds, type Progress } from "./progress";
 
-export const READ_ITEM_BY_ID = new Map<string, ReadItem>(
-  LESSONS.flatMap((l) => l.items.filter((i): i is ReadItem => i.kind === "read").map((i) => [i.id, i] as const)),
-);
+export const READ_ITEM_BY_ID = new Map<string, ReadItem>([
+  ...LESSONS.flatMap((l) => l.items.filter((i): i is ReadItem => i.kind === "read").map((i) => [i.id, i] as const)),
+  ...TRANSFER_WORDS.map((w) => [`w:${w.id}`, wordItem(w.id)] as const),
+]);
 
 /** Fällige/problematische Lese-Items als Wiederholungs-Lektion (max. 8). */
 export function buildReview(p: Progress, now = Date.now()): Lesson | null {
