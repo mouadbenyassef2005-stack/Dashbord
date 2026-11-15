@@ -18,7 +18,8 @@ export function ArabicText({ text, size = "lg", className, px }: { text: string;
   );
 }
 
-const RUN = /([؀-ۿݐ-ݿ][؀-ۿݐ-ݿ‌‍ ]*[؀-ۿݐ-ݿ]|[؀-ۿݐ-ݿ])/g;
+const A = "\u0600-\u06FF\u0750-\u077F";
+const RUN = new RegExp(`([${A}][${A}\u200C\u200D ]*[${A}]|[${A}])`, "g");
 
 /** Fließtext, in dem arabische Abschnitte automatisch in der Quran-Schrift gesetzt werden (sonst fehlen Zeichen/Harakat). */
 export function RichText({ text }: { text: string }) {
