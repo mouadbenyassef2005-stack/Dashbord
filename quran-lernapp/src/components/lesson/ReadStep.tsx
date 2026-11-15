@@ -207,7 +207,7 @@ export function ReadStep({ item, showHint, micConsent, onConsent, onAttempt, onP
           <div className="rise rounded-3xl border border-line bg-surface p-5">
             {micError && (
               <p className="mb-3 rounded-xl bg-warn-soft p-3 text-sm text-warn">
-                {micError === "denied" && "Das Mikrofon wurde blockiert. Du kannst es in den Browser-Einstellungen erlauben – oder ohne Mikrofon üben."}
+                {micError === "denied" && "Das Mikrofon ist blockiert (in Online-Vorschauen oft gesperrt). Erlaube es in den Browser-Einstellungen – oder übe ohne Mikrofon."}
                 {micError === "no-device" && "Es wurde kein Mikrofon gefunden. Du kannst ohne Mikrofon üben."}
                 {micError === "unsupported" && "Dein Browser unterstützt keine Aufnahme (oder die Seite ist nicht über HTTPS geöffnet)."}
                 {micError === "unknown" && "Die Aufnahme konnte nicht gestartet werden."}
