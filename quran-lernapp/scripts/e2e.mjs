@@ -43,7 +43,7 @@ const ids = await page.$$eval('[data-testid^="lesson-"]', (els) => els.map((e) =
 ok(ids.length >= 25, `Lernpfad zeigt ${ids.length} Lektionen`);
 
 let retries = 0, chooseWrong = 0, shotsTaken = 0;
-let checksPassed = 0, checksLater = 0;
+let checksPassed = 0, checksLater = 0, noSignal = 0;
 async function answerQuizQuestion() {
   if (await page.getByTestId("qopt-0").isVisible().catch(() => false)) await page.getByTestId("qopt-0").click();
   else if (await page.getByTestId("cl-0").isVisible().catch(() => false)) { await page.getByTestId("cl-0").click(); await page.getByTestId("q-check").click(); }
@@ -103,7 +103,7 @@ async function play(id, flag = false) {
       await mic.click();
       const allow = page.getByRole("button", { name: "Mikrofon erlauben" });
       if (await allow.isVisible().catch(() => false)) { if (id === "A1") await shot(page, "06-consent"); await allow.click(); }
-      await page.waitForTimeout(800);
+      await page.waitForTimeout(1300);
       if (id === "A1" && shotsTaken === 0) { await shot(page, "07-recording"); shotsTaken++; }
       await page.getByRole("button", { name: "Aufnahme beenden" }).click();
       await page.getByTestId("result").waitFor();
@@ -111,10 +111,14 @@ async function play(id, flag = false) {
       if (await next.isVisible().catch(() => false)) {
         if (id === "A1" && shotsTaken === 1) { await shot(page, "08-result-pass"); shotsTaken++; }
         await next.click();
-      } else {
+      } else if (await page.getByTestId("retry").isVisible().catch(() => false)) {
         retries++;
         if (id === "C1" && shotsTaken < 4) { await shot(page, "09-result-retry"); shotsTaken = 4; }
         await page.getByTestId("retry").click();
+      } else {
+        // „Ich habe fast nichts gehört“ (Fake-Mikrofon piept nur sekündlich) → ehrliche Rückmeldung, nochmal aufnehmen
+        noSignal++;
+        await page.getByRole("button", { name: "Nochmal aufnehmen" }).click();
       }
     } else if (await page.getByTestId("opt-0").isVisible().catch(() => false)) {
       for (let i = 0; i < 3; i++) {
@@ -140,7 +144,7 @@ for (const id of ids.slice(0, LIMIT)) {
 ok(true, `Verständnis-Checks: ${checksPassed} bestanden, ${checksLater} später fortgesetzt`);
 for (const k of ["memory", "quiz", "detektiv", "bauen"]) { await playGame(k); ok(true, `Spiel „${k}“ durchgespielt`); }
 await page.goto(BASE + "/pfad"); await shot(page, "22-pfad-checks");
-ok(true, `${Math.min(LIMIT, ids.length)} Lektionen durchgespielt (Wiederholungen: ${retries}, falsche Choose-Antworten: ${chooseWrong})`);
+ok(true, `${Math.min(LIMIT, ids.length)} Lektionen durchgespielt (Wiederholungen: ${retries}, „nichts gehört“: ${noSignal}, falsche Choose-Antworten: ${chooseWrong})`);
 if (LIMIT >= ids.length) {
   await play("flagged"); ok(true, "Unsichere Stellen (Markierung) geübt");
   await play("transfer"); ok(true, "Unbekannte Wörter (Transfer) gelesen");
