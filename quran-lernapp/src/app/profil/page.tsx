@@ -101,6 +101,7 @@ export default function Profil() {
       <Card className="divide-y divide-line !py-2">
         <Toggle id="hint" on={p.settings.showHint} onChange={(v) => update((x) => ({ ...x, settings: { ...x.settings, showHint: v } }))} label="Lautschrift anzeigen" desc="Transliteration als optionale Lernhilfe unter dem arabischen Text." />
         <Toggle id="mic" on={p.micConsent} onChange={(v) => update((x) => ({ ...x, micConsent: v }))} label="Mikrofon-Einwilligung" desc="Aus: Vor der nächsten Aufnahme wirst du erneut gefragt." />
+        <Toggle id="live" on={p.liveConsent} onChange={(v) => update((x) => ({ ...x, liveConsent: v }))} label="Live-Spracherkennung erlaubt" desc="Quran lesen: Audio geht zur Erkennung an den Sprachdienst deines Browsers. Aus: Du wirst vor dem nächsten Start erneut gefragt." />
         <Toggle id="unlock" on={p.settings.unlockAll} onChange={(v) => update((x) => ({ ...x, settings: { ...x.settings, unlockAll: v } }))} label="Alle Lektionen freischalten" desc="Frei springen, ohne dass etwas gesperrt ist." />
       </Card>
 

@@ -15,8 +15,10 @@ const dir = ".next/static/chunks/";
 let css = readdirSync(dir).filter((f) => f.endsWith(".css")).map((f) => readFileSync(dir + f, "utf8")).join("\n");
 css = css.replace(/@font-face\{[^}]*\}/g, "");
 const amiri = b64("node_modules/@fontsource/amiri-quran/files/amiri-quran-arabic-400-normal.woff2", "font/woff2");
+const sch = b64("node_modules/@fontsource/scheherazade-new/files/scheherazade-new-arabic-400-normal.woff2", "font/woff2");
 const inter = b64("node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2", "font/woff2");
 const fonts = `@font-face{font-family:"Amiri Quran";font-weight:400;font-display:swap;src:url(${amiri}) format("woff2")}
+@font-face{font-family:"Scheherazade New";font-weight:400;font-display:swap;src:url(${sch}) format("woff2")}
 @font-face{font-family:"Inter Variable";font-weight:100 900;font-display:swap;src:url(${inter}) format("woff2")}`;
 
 const html = `<meta charset="utf-8">

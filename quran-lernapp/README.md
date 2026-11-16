@@ -18,6 +18,25 @@ node scripts/e2e.mjs http://localhost:3100 ./screenshots   # Playwright: spielt 
 
 Mikrofon braucht `https://` oder `localhost`. Ohne Mikrofon gibt es die Selbsteinschätzung („Sicher gelesen / Noch unsicher“).
 
+## Quran lesen mit Live-Korrektur (Sure 85, Al-Burūdsch)
+
+Einstieg: Lesetraining → „Quran lesen“ (auch auf Home) → `/lesen` → `/lesen/85`.
+
+**Was wirklich passiert (keine Simulation):**
+1. Mikrofon + Echtzeit-Spracherkennung des Browsers (Web Speech API, `ar-SA`, Zwischenergebnisse + n-best-Alternativen). **Das Audio geht dabei an den Sprachdienst des Browsers** (z. B. Google in Chrome) – die Einwilligung weist darauf hin; die App speichert keine Aufnahmen.
+2. `src/lib/live/` gleicht das Erkannte **Wort für Wort** mit dem Uthmani-Text ab: Normalisierung auf das Konsonantengerüst (`normalize.ts`), Sequenz-Alignment mit Auslassungen, Einschüben und Wort-Merges (`align.ts`), Zustandsverfolgung (`tracker.ts`).
+3. Die Seite färbt **während des Lesens**: rot = deutlich anders gehört (erst nachdem du ein späteres Wort gelesen hast, über alle n-best-Alternativen hinweg und nur bei ausreichender Erkennungssicherheit), gepunktet = ausgelassen (erst nach zwei sicher gelesenen Folgewörtern), unmarkiert = richtig oder nicht sicher beurteilbar. Pausen/langsames Lesen lösen nichts aus; bei Abbruch der Erkennung startet sie automatisch neu und liest ab dem Cursor weiter.
+4. Tippen auf ein Wort: Details (erkannt vs. erwartet, möglicher Buchstabenunterschied), Wort-Audio (Quran.com, falls erreichbar), „Hier weiterlesen“, „Unsicher markieren“. Am Ende: Zusammenfassung und „Falsche Wörter üben“ (fließt in Fehlerhistorie/adaptive Übungen).
+
+**Grenzen (bewusst nicht überspielt):**
+- Browser-Spracherkennung ist **keine Aussprachebewertung auf Laut-/Phonem-Ebene**. Geprüft wird auf Wortebene am Konsonantengerüst; kurze Vokale, Madd-Längen, Qalqala, Ghunna u. a. (Tajweed) werden **nicht** bewertet. „Möglicher Buchstabenunterschied“ ist ein Hinweis der Erkennung, kein Befund.
+- Allgemeine Arabisch-Modelle erkennen Quran-Rezitation nicht perfekt → Fehlalarme/Fehlerkennung sind möglich; deshalb die konservative Logik.
+- Echte Phonem-/Tajweed-Bewertung braucht ein eigenes Modell (z. B. Whisper/wav2vec2 + Forced Alignment + GOP) auf einem Server. Einhängepunkt: `WebSpeechSource` ersetzen durch eine Quelle mit derselben Schnittstelle (`Hypothesis[]`) bzw. dem `ReadingTracker` zusätzliche Wort-Scores liefern.
+- Unterstützt: Chrome/Edge (Desktop/Android), Safari; **nicht Firefox**. Nur über `https://` oder `localhost`. In der Artifact-Vorschau gesperrt.
+- Mit echter Spracherkennung wurde diese Funktion in der Entwicklungsumgebung **nicht** getestet (kein Mikrofon/Google-Dienst). Getestet sind Logik (`tests/live.test.ts`) und UI-Ablauf mit einem Test-Double für `SpeechRecognition` (`scripts/e2e-reader.mjs`).
+
+**Quran-Text:** Uthmani aus `quran-json` (QuranEnc), mit allen Harakat, in Amiri Quran / Scheherazade New gesetzt (Amiri Quran fehlt U+065E → Scheherazade). Die App gleicht den Text im Browser optional mit der Quran.com-API (v4) ab (`quranCom.ts`; Status im Hilfe-Text sichtbar) und nutzt deren Wort-Audio. In der Entwicklungsumgebung war Quran.com nicht erreichbar → dieser Abgleich ist **ungetestet**. Quran.com-Schriftart/-Layout (QPC) wird nicht verwendet.
+
 ## Fünf Hauptbereiche
 
 | Bereich | Route | Inhalt |

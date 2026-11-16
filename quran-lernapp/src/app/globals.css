@@ -15,8 +15,11 @@
   --color-ok-soft: #e3f0e8;
   --color-warn: #b5533c;
   --color-warn-soft: #f8e7e2;
+  --color-wrong: #d32f2f;
+  --color-wrong-soft: #fde8e8;
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-arabic: "Amiri Quran", "Noto Naskh Arabic", "Traditional Arabic", serif;
+  --font-arabic: "Amiri Quran", "Scheherazade New", "Noto Naskh Arabic", "Traditional Arabic", serif;
+  --font-arabic-alt: "Scheherazade New", "Amiri Quran", "Noto Naskh Arabic", serif;
   --shadow-card: 0 1px 2px rgb(27 42 42 / 0.04), 0 8px 24px -12px rgb(27 42 42 / 0.12);
 }
 
@@ -37,6 +40,9 @@ body {
   line-height: 1.9;
   font-feature-settings: "liga", "calt", "mark", "mkmk";
 }
+
+/* Amiri Quran fehlt U+065E (Fatha mit zwei Punkten, offenes Tanwin im Mushaf-Text) → Wörter damit in Scheherazade New setzen */
+.arabic-alt { font-family: var(--font-arabic-alt); }
 
 @keyframes pulse-ring {
   0% { transform: scale(1); opacity: 0.45; }

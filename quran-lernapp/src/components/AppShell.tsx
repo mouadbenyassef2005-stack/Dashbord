@@ -19,14 +19,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   const path = usePathname();
   const router = useRouter();
   const { progress, hydrated } = useProgress();
-  const immersive = path.startsWith("/lektion") || path.startsWith("/spiele") || path.startsWith("/onboarding");
+  const immersive = path.startsWith("/lektion") || path.startsWith("/spiele") || path.startsWith("/lesen/") || path.startsWith("/onboarding");
   const needsOnboarding = hydrated && !progress.onboarded;
   useEffect(() => {
     if (!immersive && needsOnboarding) router.replace("/onboarding");
   }, [immersive, needsOnboarding, router]);
   if (immersive) return <>{children}</>;
   if (!hydrated || needsOnboarding) return <div className="grid min-h-dvh place-items-center text-muted" aria-busy>Lade …</div>;
-  const active = (href: string) => (href === "/" ? path === "/" : href === "/training" ? path.startsWith("/training") || path.startsWith("/woerter") : path.startsWith(href));
+  const active = (href: string) => (href === "/" ? path === "/" : href === "/training" ? path.startsWith("/training") || path.startsWith("/woerter") || path.startsWith("/lesen") : path.startsWith(href));
   return (
     <div className="mx-auto min-h-dvh max-w-5xl">
       <header className="hidden items-center justify-between px-8 py-6 sm:flex">

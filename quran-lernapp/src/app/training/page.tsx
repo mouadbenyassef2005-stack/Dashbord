@@ -25,6 +25,16 @@ export default function Lesetraining() {
     <div className="space-y-5">
       <PageHeader title="Lesetraining" subtitle="Übe gezielt – nach deinen eigenen Fehlerstellen und mit neuen Wörtern." />
 
+      <Card data-testid="train-read" className="!border-primary/30 !bg-primary-soft/50">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="font-semibold">Quran lesen – Live-Korrektur</h2>
+            <p className="mt-1 text-sm text-muted">Sure Al-Burūdsch laut vorlesen: die App folgt jedem Wort und markiert abweichend gehörte Wörter sofort.</p>
+          </div>
+          <ButtonLink href="/lesen" data-testid="to-lesen"><IconTrain className="size-5" /> Lesen</ButtonLink>
+        </div>
+      </Card>
+
       <Card data-testid="train-personal">
         <div className="flex items-start justify-between gap-3">
           <div>

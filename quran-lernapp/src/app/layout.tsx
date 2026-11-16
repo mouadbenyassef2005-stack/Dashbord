@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/inter";
 import "@fontsource/amiri-quran/arabic-400.css";
+import "@fontsource/scheherazade-new/arabic-400.css";
 import "./globals.css";
 import { AppShell } from "@/components/AppShell";
 

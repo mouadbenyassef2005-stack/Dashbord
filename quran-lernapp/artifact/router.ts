@@ -8,7 +8,7 @@ export const toHash = (path: string) => {
 export const fromHash = (hash: string) => {
   const h = hash.replace(/^#/, "");
   if (!h || h === "start") return "/";
-  return "/" + h.replace(/^lektion-/, "lektion/").replace(/^spiele-/, "spiele/");
+  return "/" + h.replace(/^lektion-/, "lektion/").replace(/^spiele-/, "spiele/").replace(/^lesen-/, "lesen/");
 };
 const subs = new Set<() => void>();
 let path = typeof location !== "undefined" ? fromHash(location.hash) : "/";

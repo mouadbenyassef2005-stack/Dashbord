@@ -1,11 +1,13 @@
 import { LESSONS, wordItem } from "@/content/lessons";
-import { TRANSFER_WORDS } from "@/content/quran";
+import { TRANSFER_WORDS, WORDS } from "@/content/quran";
 import type { Lesson, ReadItem } from "@/content/types";
 import { dueItemIds, type Progress } from "./progress";
 
 export const READ_ITEM_BY_ID = new Map<string, ReadItem>([
   ...LESSONS.flatMap((l) => l.items.filter((i): i is ReadItem => i.kind === "read").map((i) => [i.id, i] as const)),
   ...TRANSFER_WORDS.map((w) => [`w:${w.id}`, wordItem(w.id)] as const),
+  // Wörter aus dem Live-Lesemodus (Sure 85): falsch gelesene Wörter lassen sich als Übung wiederholen
+  ...WORDS.filter((w) => w.surah === 85).map((w) => [`w:${w.id}`, wordItem(w.id)] as const),
 ]);
 
 /** Fällige/problematische Lese-Items als Wiederholungs-Lektion (max. 8). */

@@ -72,6 +72,8 @@ export interface Progress {
   /** Zeitpunkt der ersten bestandenen Übung je Item */
   firstPassAt: Record<string, number>;
   micConsent: boolean;
+  /** Einwilligung für die Live-Spracherkennung (Audio geht an den Sprachdienst des Browsers) */
+  liveConsent: boolean;
   settings: { showHint: boolean; unlockAll: boolean };
   lastLessonId?: string;
 }
@@ -94,6 +96,7 @@ export const DEFAULT_PROGRESS: Progress = {
   flagged: {},
   firstPassAt: {},
   micConsent: false,
+  liveConsent: false,
   settings: { showHint: true, unlockAll: false },
 };
 

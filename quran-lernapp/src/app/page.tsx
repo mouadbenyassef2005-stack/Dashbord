@@ -56,6 +56,17 @@ export default function Home() {
         </Card>
       )}
 
+      <Card data-testid="read-card">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider text-muted">Quran lesen</p>
+            <p className="mt-1 text-lg font-semibold">Sure Al-Burūdsch mit Live-Korrektur</p>
+            <p className="mt-0.5 text-sm text-muted">Laut lesen – die App markiert abweichend gehörte Wörter sofort.</p>
+          </div>
+          <ButtonLink href="/lesen" variant="soft" data-testid="home-lesen">Lesen</ButtonLink>
+        </div>
+      </Card>
+
       <Card data-testid="personal-card">
         <div className="flex items-start justify-between gap-3">
           <div>
