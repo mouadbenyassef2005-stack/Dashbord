@@ -1,6 +1,6 @@
 # QAIDAH – Arabische Schrift lesen und schreiben (Erwachsene)
 
-Stand: **M0–M3-Kern** (siehe Roadmap). Eigenständig neben `../quran-lernapp` (anderes Produkt, unverändert).
+Stand: **M0–M3-Kern + M4-Start (Schreiben für ا ب ت ث)**. Eigenständig neben `../quran-lernapp` (anderes Produkt, unverändert).
 
 ```bash
 npm install
@@ -19,7 +19,15 @@ npm run e2e -- http://localhost:4173 ./screenshots   # Playwright, echter Browse
 
 ## Was ist echt, was fehlt
 Umgesetzt und getestet: 28 Buchstaben, Einführung, 3 Aufgabenarten (Erkennen, Laut zuordnen, Ähnliche unterscheiden) mit Wiederholung nach Fehler, Planer, Persistenz, Export/Import/Reset, Hell/Dunkel, Prüfseite `#/specimen`.
-**Noch nicht vorhanden:** Handschrift (M4), echte Audioaufnahmen (keine Dateien; Buttons sagen das), Aufnahme/Vergleich, Kontextform-Übungen, Silben/Wörter, PWA, Gamification (XP).
+## Schreiben (M4-Start)
+`domain/handwriting/`: Strichaufnahme per Pointer Events (`ui/WritingPad.tsx`), Trennung Körper/Punkte, Formvergleich (größen-/positionsunabhängige Chamfer-Distanz), Punktanzahl und -lage (oben/unten), Schreibrichtung, Rangfolge fürs freie Schreiben (Zielbuchstabe muss klar bester Treffer sein).
+- Templates (`templates.ts`) gibt es erst für **ا ب ت ث**; sie sind **selbst entworfene, vereinfachte Skelette** ohne fachliche Abnahme.
+- Tests (`tests/handwriting.test.ts`) nutzen **synthetisch verrauschte Eingaben aus denselben Templates**: sie belegen die Mechanik, **nicht** die Praxistauglichkeit mit echter Handschrift. Schwellen (`TH`) sind ungeeicht.
+- Kalibrierung: `#/labor` sammelt echte Striche (gut/schlecht) lokal und exportiert JSON.
+- Nachzeichnen zählt als Nachweis „Erkennen“, freies Schreiben ohne Vorlage als „Produktion“. Zu kleine/leere Eingaben erzeugen kein Ereignis. Überspringen ist jederzeit möglich.
+- E2E: `node scripts/e2e-write.mjs` (echte Mausereignisse).
+
+**Noch nicht vorhanden:** Schreiben für ب-Familie hinaus (24 weitere Buchstaben), Kontextformen schreiben, echte Audioaufnahmen (keine Dateien; Buttons sagen das), Aufnahme/Vergleich, Kontextform-Übungen, Silben/Wörter, PWA, Gamification (XP).
 Aussprache: keine automatische Bewertung, keine Scores (`platform/pronunciation.ts` ist nur die Schnittstelle).
 
 ## Lernstand

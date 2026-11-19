@@ -6,6 +6,7 @@ import { SKILL_TO_TYPE } from "@/domain/session";
 import { useApp } from "./AppContext";
 import { Ar, Mastery, LEVEL_LABEL } from "@/ui/parts";
 import { AudioButton } from "@/ui/AudioButton";
+import { TEMPLATE_BY_ID } from "@/domain/handwriting/templates";
 
 const SKILL_LABEL: Record<Skill, string> = {
   visual: "Buchstaben erkennen", sound: "Laut hören → Buchstabe", association: "Buchstabe ↔ Laut", pronunciation: "Aussprache",
@@ -90,7 +91,7 @@ export function LetterDetail() {
         <h2 id="skills">Dein Stand</h2>
         <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
           {SKILLS.map((s) => {
-            const available = !!SKILL_TO_TYPE[s];
+            const available = !!SKILL_TO_TYPE[s] || (s === "writing" && TEMPLATE_BY_ID.has(l.id));
             const m = masteryFor(progress, l.id, s);
             return (
               <li key={s} className="row between" style={{ padding: "10px 0", borderBottom: "1px solid var(--line)" }}>
@@ -105,6 +106,7 @@ export function LetterDetail() {
       </section>
 
       <div className="row">
+        {known && TEMPLATE_BY_ID.has(l.id) && <Link className="btn btn-secondary" to="/schreiben">Schreiben üben</Link>}
         {!known ? (
           <button className="btn btn-primary" onClick={() => { introduce(l.id); nav("/ueben"); }}>Kennengelernt – jetzt üben</button>
         ) : (

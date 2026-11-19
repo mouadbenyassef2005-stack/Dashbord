@@ -7,6 +7,8 @@ import { LettersPage, LetterDetail } from "./features/Letters";
 import { Practice } from "./features/Practice";
 import { Me } from "./features/Me";
 import { Specimen } from "./features/Specimen";
+import { Write } from "./features/Write";
+import { Lab } from "./features/Lab";
 
 const NAV = [
   { to: "/", label: "Heute", icon: Icon.today, end: true },
@@ -42,7 +44,9 @@ export function App() {
             <Route path="/buchstaben/:id" element={<LetterDetail />} />
             <Route path="/ueben" element={<Practice />} />
             <Route path="/ich" element={<Me />} />
+            <Route path="/schreiben" element={<Write />} />
             <Route path="/specimen" element={<Specimen />} />
+            <Route path="/labor" element={<Lab />} />
             <Route path="*" element={<p>Seite nicht gefunden.</p>} />
           </Routes>
         )}

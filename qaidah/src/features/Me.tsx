@@ -34,6 +34,7 @@ export function Me() {
           ))}
         </div>
         <Link className="muted" to="/specimen">Schrift- und Farbprüfseite öffnen</Link>
+        <Link className="muted" to="/labor">Schreib-Labor (Striche sammeln)</Link>
       </section>
 
       <section className="stack"><h2>Aussprache</h2>
