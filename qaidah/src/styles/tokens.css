@@ -1,0 +1,33 @@
+:root, :root[data-theme="dark"] {
+  --bg: #17181A; --bg-2: #1E2023; --surface: #26282B; --surface-2: #2E3134;
+  --line: #3A3D41; --text: #F4F2EE; --text-2: #A6A39D; --text-3: #8A8782;
+  --accent: #F26A1B; --accent-hover: #FF7D33; --on-accent: #17181A; --accent-text: #F26A1B;
+  --accent-soft: rgba(242, 106, 27, 0.14);
+  --amber: #F2A33A; --coral: #E5584A; --coral-soft: rgba(229, 88, 74, 0.14); --coral-text: #F0786C;
+  --ok: #7FA37A; --ok-soft: rgba(127, 163, 122, 0.16); --ok-text: #8FB48A;
+  --focus: #F4F2EE;
+  color-scheme: dark;
+}
+:root[data-theme="light"] {
+  --bg: #F4F2EE; --bg-2: #EBE8E2; --surface: #FFFFFF; --surface-2: #F7F5F1;
+  --line: #DAD6CE; --text: #17181A; --text-2: #55534F; --text-3: #6E6B66;
+  --accent: #F26A1B; --accent-hover: #E25D10; --on-accent: #17181A; --accent-text: #B9480B;
+  --accent-soft: rgba(242, 106, 27, 0.12);
+  --amber: #B9770E; --coral: #C2402F; --coral-soft: rgba(194, 64, 47, 0.1); --coral-text: #A8341F;
+  --ok: #3F6B45; --ok-soft: rgba(63, 107, 69, 0.12); --ok-text: #2F5436;
+  --focus: #17181A;
+  color-scheme: light;
+}
+:root {
+  --font-ui: "Instrument Sans Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Lehr-Arabisch: großzügiger Harakat-Raum. UI-Arabisch: Naskh */
+  --font-ar: "Scheherazade New", "Noto Naskh Arabic", "Amiri", serif;
+  --font-ar-ui: "Noto Naskh Arabic", "Scheherazade New", serif;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px; --s8: 72px;
+  --r-sm: 8px; --r-md: 12px; --r-lg: 20px;
+  --ar-hero: clamp(120px, 28vw, 200px); --ar-teach: clamp(48px, 10vw, 72px); --ar-body: 28px;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) { color-scheme: light; }
+}
