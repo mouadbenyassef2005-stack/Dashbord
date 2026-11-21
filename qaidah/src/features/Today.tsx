@@ -24,6 +24,11 @@ export function Today() {
         <p className="notice" role="status">Dein Lernstand wird in diesem Browser gerade nicht dauerhaft gespeichert (z. B. privater Modus). Nutze unter „Ich“ die Sicherung.</p>
       )}
 
+      <section className="panel row between" aria-labelledby="l1">
+        <div className="stack"><h2 id="l1">Lektion 1: Alif, Bā, Tā, Thā</h2><p className="muted">Geführter Einstieg in sieben Phasen, von der Orientierung bis zur Langzeit-Wiederholung.</p></div>
+        <Link className="btn btn-primary" to="/lektion">Zur Lektion</Link>
+      </section>
+
       {plan.length > 0 && (
         <section className="panel stack" aria-labelledby="rev">
           <h2 id="rev">{due > 0 ? `${due} Wiederholungen fällig` : "Übung zum Festigen"}</h2>

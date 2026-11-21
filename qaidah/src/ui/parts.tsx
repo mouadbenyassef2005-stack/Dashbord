@@ -19,6 +19,7 @@ export function Ar({ children, size = "teach", className = "", label }: { childr
 const P = { fill: "none", stroke: "currentColor", strokeWidth: 1.7, strokeLinecap: "round", strokeLinejoin: "round" } as const;
 export const Icon = {
   today: <svg viewBox="0 0 24 24" {...P}><circle cx="12" cy="12" r="8" /><path d="M12 7v5l3 2" /></svg>,
+  lesson: <svg viewBox="0 0 24 24" {...P}><path d="M4 5.5C7 4 10 4.3 12 6c2-1.7 5-2 8-.5V19c-3-1.5-6-1.2-8 .5-2-1.7-5-2-8-.5z" /><path d="M12 6v13.5" /></svg>,
   path: <svg viewBox="0 0 24 24" {...P}><path d="M5 19c0-5 14-3 14-9" /><circle cx="5" cy="19" r="1.5" /><circle cx="19" cy="6" r="1.5" /></svg>,
   letters: <svg viewBox="0 0 24 24" {...P}><rect x="4" y="4" width="6" height="6" rx="1.5" /><rect x="14" y="4" width="6" height="6" rx="1.5" /><rect x="4" y="14" width="6" height="6" rx="1.5" /><rect x="14" y="14" width="6" height="6" rx="1.5" /></svg>,
   practice: <svg viewBox="0 0 24 24" {...P}><path d="M5 12l4 4 10-10" /></svg>,

@@ -33,3 +33,11 @@ Aussprache: keine automatische Bewertung, keine Scores (`platform/pronunciation.
 ## Lernstand
 - Arabisch-Inhalte (Namen, Ausspracheanleitungen, Beispielwörter) sind **nicht fachlich abgenommen**.
 - Nicht auf Kontextformen per `font-feature-settings: init/medi/fina` verlassen: das zerstört das Shaping (E2E-Regressionstest vorhanden).
+
+## Lektion 1 (`#/lektion`): Lernsimulation in sieben Phasen
+Interaktiver Lernablauf für ا ب ت ث und Fatha/Kasra/Damma, integriert in die App (Nav „Lektion“, Karte unter „Heute“).
+1 Orientierung (Advanced Organizer, Vorab-Test) · 2 Entdecken (Scaffolding, Dual Coding, Punkte-Baukasten, Schreiben mit abnehmender Hilfe) · 3 Hypothesen (Productive Failure, kein Feedback, mit Sicherheitsangabe) · 4 Verstehen (Abgleich der Hypothesen, Erklärung, Elaboration, Check mit Sofort-Feedback) · 5 Anwenden (Transfer „neu kombiniert“, Interleaving, freies Schreiben) · 6 Abrufen (ohne Hilfen, Feedback erst am Ende, Vorher/Nachher) · 7 Festigen (simulierte Zeit, Fälligkeit, Vergessenskurve, Wiederholsitzungen).
+- Code: `src/content/lektion1.ts` (Inhalt), `src/domain/lektion/` (Aufgaben, Zustand, Wiederholungslogik; nutzt den bestehenden Scheduler), `src/features/lektion/` (UI). Zustand in localStorage (`qaidah.lektion1.v1`); Ergebnisse zu Buchstaben und Schreiben fließen in den Hauptlernstand, simulierte Zeit nie.
+- Alif wird als Dehnungsbuchstabe und Nicht-Verbinder gelehrt, nicht als Konsonant. Wörter stehen in Pausalform (Sukun folgt später).
+- Tests: `tests/lektion.test.ts`; E2E: `node scripts/e2e-lektion.mjs http://localhost:4173 ./screenshots`.
+- Offen: Sprecher-Aufnahmen fehlen, Inhalte nicht fachlich abgenommen, Intervall- und Schreib-Schwellen ungeeicht.

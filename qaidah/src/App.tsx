@@ -9,9 +9,11 @@ import { Me } from "./features/Me";
 import { Specimen } from "./features/Specimen";
 import { Write } from "./features/Write";
 import { Lab } from "./features/Lab";
+import { LektionPage } from "./features/lektion/LektionPage";
 
 const NAV = [
   { to: "/", label: "Heute", icon: Icon.today, end: true },
+  { to: "/lektion", label: "Lektion", icon: Icon.lesson },
   { to: "/weg", label: "Weg", icon: Icon.path },
   { to: "/buchstaben", label: "Buchstaben", icon: Icon.letters },
   { to: "/ueben", label: "Üben", icon: Icon.practice },
@@ -39,6 +41,7 @@ export function App() {
         {status === "ready" && (
           <Routes>
             <Route path="/" element={<Today />} />
+            <Route path="/lektion" element={<LektionPage />} />
             <Route path="/weg" element={<Path />} />
             <Route path="/buchstaben" element={<LettersPage />} />
             <Route path="/buchstaben/:id" element={<LetterDetail />} />
