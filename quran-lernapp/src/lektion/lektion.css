@@ -262,3 +262,60 @@ table.t td.hl { background: var(--accent-soft); }
 
 
 }
+
+/* ===== Design-System-Ergänzungen (Audio, Kompetenzen, Einheiten, Zustände) ===== */
+.qd .muted { color: var(--color-muted); }
+.qd .phase-title { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; }
+.qd .audio { display: grid; gap: 4px; }
+.qd .audio-missing { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; color: var(--color-muted); border: 1px dashed var(--line); border-radius: 99px; padding: 6px 12px; }
+.qd .stage-tag { font-size: 11px; color: var(--color-muted); letter-spacing: .02em; }
+.qd .opt { position: relative; }
+.qd .opt-mark { position: absolute; top: 6px; right: 10px; font-size: 18px; font-weight: 700; }
+.qd .opt[data-state="right"] .opt-mark { color: var(--ok-text); }
+.qd .opt[data-state="wrong"] .opt-mark { color: var(--coral-text); }
+.qd .mnemonic { text-align: center; }
+.qd .stim { display: grid; gap: var(--s3); justify-items: center; }
+
+/* Einheiten- und Phasen-Navigation */
+.qd .units { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; list-style: none; padding: 0; margin: 0; }
+@media (min-width: 640px) { .qd .units { grid-template-columns: repeat(4, 1fr); } }
+.qd .units button { width: 100%; min-height: 56px; text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: var(--r-md); padding: 8px 12px; cursor: pointer; display: grid; grid-template-columns: auto 1fr; column-gap: 10px; align-items: center; }
+.qd .units button b { width: 28px; height: 28px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-text); display: grid; place-items: center; font-size: 14px; }
+.qd .units button span { font-size: 13px; line-height: 1.25; }
+.qd .units button small { grid-column: 2; font-size: 11px; color: var(--color-muted); }
+.qd .units button[aria-current="step"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.qd .units button[disabled] { opacity: .55; cursor: not-allowed; }
+
+/* Kompetenzbereiche */
+.qd .areas { display: grid; grid-template-columns: 1fr; gap: var(--s3); }
+@media (min-width: 560px) { .qd .areas { grid-template-columns: 1fr 1fr; } }
+.qd .area { border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); padding: var(--s4) var(--s5); display: grid; gap: 6px; align-content: start; }
+.qd .area-empty { color: var(--color-muted); font-size: 14px; }
+.qd .levels { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 14px; }
+.qd .levels li { display: flex; gap: 8px; align-items: baseline; }
+.qd .levels .dots { letter-spacing: 2px; font-size: 11px; color: var(--accent-text); }
+.qd .levels li[data-level="unsure"] .dots { color: var(--coral-text); }
+.qd .levels li[data-level="understood"] .dots { color: var(--amber); }
+
+/* Entscheidungs-Schwellen */
+.qd .gates { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.qd .gates li { display: flex; gap: 10px; align-items: baseline; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
+.qd .gates li[data-pass="true"] > span:first-child { color: var(--ok-text); font-weight: 700; }
+.qd .gates li[data-pass="false"] > span:first-child { color: var(--coral-text); font-weight: 700; }
+.qd .gates li[data-pass="false"] { border-color: var(--coral); }
+
+/* Verbindungsbeispiele */
+.qd .join-row { display: flex; justify-content: center; gap: 6px; }
+.qd .join-cell { display: grid; justify-items: center; min-width: 48px; border: 1px solid var(--line); border-radius: var(--r-sm); padding: 2px 6px; }
+.qd .join-cell small { font-size: 11px; color: var(--color-muted); }
+.qd .rowh { text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--text); }
+.qd .card[data-active="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+
+/* Arabische Zeichen: genug Raum für Punkte und Vokalzeichen über und unter der Zeile */
+.qd .ar { line-height: 2.1; padding-block: 0.12em; }
+.qd .ar-hero { line-height: 1.7; }
+.qd .tile .ar, .qd .forms .ar { line-height: 1.8; }
+.qd .btn { min-height: 48px; }
+.qd .stepper button, .qd .conf button, .qd .seg button { min-height: 48px; }
+.qd input[type="checkbox"] { width: 24px; height: 24px; accent-color: var(--accent); }
+@media (prefers-reduced-motion: reduce) { .qd * { animation: none !important; transition: none !important; } }

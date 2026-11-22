@@ -47,10 +47,13 @@ export const SYLLABLES: Syllable[] = CONSONANT_IDS.flatMap((c) => [
 ]);
 
 export interface Word { id: string; ar: string; tr: string; de: string; letters: string[]; novel: boolean; note?: string }
+
+/** Alle Wörter stehen in Pausalform: Kurzvokale im Wort sind geschrieben, der Endvokal und das Sukun-Zeichen (ْ) am Wortende nicht. */
+export const WORD_VOCALIZATION_NOTE = "Teilweise vokalisiert (Pausalform): Die Vokale im Wort sind geschrieben. Am Wortende steht kein Vokalzeichen. Du liest dort ohne Vokal. Das Zeichen für „kein Vokal“ (Sukun) und Endvokale lernst du später.";
 export const WORDS: Word[] = [
   { id: "word:bab", ar: "بَاب", tr: "bāb", de: "Tür", letters: ["ba", "alif", "ba"], novel: false },
   { id: "word:thabit", ar: "ثَابِت", tr: "thābit", de: "fest, beständig", letters: ["tha", "alif", "ba", "ta"], novel: false },
-  { id: "word:tab", ar: "تَاب", tr: "tāb", de: "er bereute (kehrte um)", letters: ["ta", "alif", "ba"], novel: true, note: "Pausalform von tāba" },
+  { id: "word:tab", ar: "تَاب", tr: "tāb", de: "er bereute (kehrte um)", letters: ["ta", "alif", "ba"], novel: true, note: "Pausalform des Verbs tāba (تَابَ, „er bereute“). Das Verb steht normalerweise mit Endvokal." },
   { id: "word:thabat", ar: "ثَبَات", tr: "thabāt", de: "Beständigkeit, Festigkeit", letters: ["tha", "ba", "alif", "ta"], novel: true },
 ];
 
@@ -71,101 +74,47 @@ export const ITEMS: Item[] = [
 export const ITEM_BY_ID = new Map(ITEMS.map((i) => [i.id, i]));
 
 /** Beschreibungen für Merkmals-Aufgaben und Bildanker (Dual Coding: Wort + Bild). */
-export const FEATURE: Record<(typeof L1_LETTER_IDS)[number], { text: string; anchor: string }> = {
-  alif: { text: "ein senkrechter Strich, ohne Bogen und ohne Punkte", anchor: "Ein Pfahl: gerade, schlank, steht allein." },
-  ba: { text: "ein Bogen mit einem Punkt darunter", anchor: "Ein Boot (Bā) mit einem Anker im Wasser darunter." },
-  ta: { text: "ein Bogen mit zwei Punkten darüber", anchor: "Eine Tasse (Tā) mit zwei Dampfwölkchen darüber." },
-  tha: { text: "ein Bogen mit drei Punkten darüber", anchor: "Drei Punkte: „three“, th wie in „think“." },
+export const FEATURE: Record<(typeof L1_LETTER_IDS)[number], { text: string; anchor: string; keyword: string }> = {
+  alif: { text: "ein senkrechter Strich, ohne Bogen und ohne Punkte", anchor: "Ein Pfahl: gerade, schlank, steht allein.", keyword: "Pfahl" },
+  ba: { text: "ein Bogen mit einem Punkt darunter", anchor: "Ein Boot (Bā) mit einem Anker im Wasser darunter.", keyword: "Boot + Anker" },
+  ta: { text: "ein Bogen mit zwei Punkten darüber", anchor: "Eine Tasse (Tā) mit zwei Dampfwölkchen darüber.", keyword: "Tasse" },
+  tha: { text: "ein Bogen mit drei Punkten darüber", anchor: "Drei Punkte: „three“, th wie in „think“.", keyword: "drei oben" },
 };
 
-/** Mund- und Merkhilfen der Vokalzeichen. */
-export const VOWEL_INFO: Record<VowelId, { place: string; look: string; mouth: string }> = {
-  fatha: { place: "über dem Buchstaben", look: "kleiner schräger Strich", mouth: "Mund offen, wie das „a“ in „Mama“" },
-  kasra: { place: "unter dem Buchstaben", look: "kleiner schräger Strich", mouth: "Lippen breit, wie das „i“ in „Wind“" },
-  damma: { place: "über dem Buchstaben", look: "winziges „و“ mit Schlaufe", mouth: "Lippen rund, wie das „u“ in „Mund“" },
+/**
+ * Aussprachehilfen der Vokalzeichen. Entscheidend ist bei i und u die ZUNGENPOSITION, bei u zusätzlich die Lippenrundung.
+ * Deutsche Vergleichswörter sind Annäherungen, keine Gleichsetzung. Nicht von einer arabischsprachigen Person abgenommen
+ * (siehe docs/PHONETIK-PRUEFLISTE.md).
+ */
+export const VOWEL_INFO: Record<VowelId, { place: string; look: string; mouth: string; tongue: string; caution: string }> = {
+  fatha: {
+    place: "über dem Buchstaben", look: "kleiner schräger Strich",
+    mouth: "Mund offen, Zunge flach und entspannt, kurzer a-Laut.",
+    tongue: "Zunge liegt flach im Mund, Kiefer ist geöffnet.",
+    caution: "Das deutsche „a“ in „Wasser“ ist ein guter Start. Das arabische kurze a wird aber je nach Nachbarlaut etwas heller oder dunkler gesprochen.",
+  },
+  kasra: {
+    place: "unter dem Buchstaben", look: "kleiner schräger Strich",
+    mouth: "Kurzer i-Laut: Der vordere Zungenrücken hebt sich nah an den harten Gaumen, die Zungenspitze liegt hinter den unteren Schneidezähnen.",
+    tongue: "Zunge vorn und hoch.",
+    caution: "Kurz und ungespannt wie das „i“ in „Wind“, nicht gedehnt wie in „Biene“. Die Lippen sind dabei entspannt.",
+  },
+  damma: {
+    place: "über dem Buchstaben", look: "winziges „و“ mit Schlaufe",
+    mouth: "Kurzer u-Laut: Der hintere Zungenrücken hebt sich zum weichen Gaumen, die Zunge zieht sich zurück, die Lippen sind gerundet.",
+    tongue: "Zunge hinten und hoch, Lippen rund.",
+    caution: "Kurz wie das „u“ in „Mund“, nicht gedehnt wie in „Mut“.",
+  },
 };
 
-/* ---------- Phase 3: Hypothesen (Productive Failure) ---------- */
-export type Confidence = "sure" | "unsure" | "guess";
-export const CONFIDENCE_LABEL: Record<Confidence, string> = { sure: "Ich bin mir sicher", unsure: "Eher vermutet", guess: "Geraten" };
-
-export interface Hypothesis {
-  id: string;
-  title: string;
-  /** Aufgabenstellung; „given“ zeigt Vorwissen als Muster. */
-  question: string;
-  given?: string[];
-  stimulus: string;
-  options: string[];
-  optionsAr?: boolean;
-  /** Index der fachlich richtigen Option */
-  answer: number;
-  /** Auflösung in Phase 4 */
-  reveal: string;
-}
+/** Artikulationshilfen für die Konsonanten dieser Lektion. */
+export const ARTICULATION: Record<string, { title: string; steps: string[]; common: string }> = {
+  alif: { title: "Alif", steps: ["Alif hat hier keinen eigenen Konsonantenlaut.", "Im Namen „Alif“ hörst du am Anfang einen kleinen Stimmeinsatz (Hamza). Der gehört nicht zum Zeichen ا selbst."], common: "Nicht „Alif = a“ merken: Das kurze a schreibt die Fatha." },
+  ba: { title: "Bā /b/", steps: ["Beide Lippen schließen sich kurz, dann öffnen sie sich.", "Die Stimme schwingt mit (stimmhaft), wie beim deutschen „b“."], common: "Kaum ein Problem für Deutschsprachige." },
+  ta: { title: "Tā /t/", steps: ["Die Zungenspitze berührt die oberen Schneidezähne oder den Zahndamm direkt dahinter.", "Der Laut wird ohne Stimme gesprochen und nicht stark behaucht."], common: "Am Wortanfang sprechen Deutsche „t“ meist mit einem kräftigen Hauch. Im Arabischen ist er schwächer." },
+  tha: { title: "Thā /θ/ (stimmloser dentaler Reibelaut)", steps: ["Schiebe die Zungenspitze leicht zwischen oder an die oberen Schneidezähne.", "Blase Luft durch den engen Spalt. Die Stimmbänder schwingen nicht: Leg eine Hand an den Hals, es soll nichts brummen.", "Übung: Sprich ein langes „sss“ und schiebe dabei die Zungenspitze langsam nach vorn an die Zähne."], common: "Es gibt keinen deutschen Laut dafür. Häufige Ersatzlaute sind „s“ (Zunge zu weit hinten) oder „f“. Das englische „th“ in „think“ ist derselbe Laut." },
+};
 
 export const UNKNOWN_OPTION = "Weiß ich nicht";
-
-export const HYPOTHESES: Hypothesis[] = [
-  {
-    id: "h-kasra", title: "Das Zeichen unter dem Buchstaben",
-    question: "Dieses Zeichen unter dem ب kennst du noch nicht. Wie klingt die Silbe?",
-    given: ["بَ = ba", "تَ = ta", "ثَ = tha"], stimulus: "بِ",
-    options: ["ba", "bi", "bu"], answer: 1,
-    reveal: "Das Zeichen unter dem Buchstaben heißt Kasra und steht für ein kurzes „i“: بِ = bi. Der Punkt gehört zum ب, das kleine schräge Zeichen darunter ist das Kasra.",
-  },
-  {
-    id: "h-damma", title: "Das Zeichen mit der Schlaufe",
-    question: "Und dieses Zeichen über dem ب? Es sieht anders aus als das erste, das du kennst.",
-    given: ["بَ = ba", "بِ = bi (deine Vermutung gilt)"], stimulus: "بُ",
-    options: ["ba", "bi", "bu"], answer: 2,
-    reveal: "Das Zeichen heißt Damma und steht für ein kurzes „u“: بُ = bu. Es ist ein winziges „و“ (Wāw) über dem Buchstaben, daran erkennst du es.",
-  },
-  {
-    id: "h-analogy", title: "Übertragen auf einen anderen Buchstaben",
-    question: "Du kennst ت = t. Wie klingt diese Silbe?",
-    stimulus: "تِ",
-    options: ["ta", "ti", "tu", "thi"], answer: 1,
-    reveal: "Die Vokalzeichen funktionieren bei jedem Konsonanten gleich: Buchstabe + Kasra = Konsonant + i. Also تِ = ti. Das Zeichen ändert nur den Vokal, der Buchstabe liefert den Konsonanten.",
-  },
-  {
-    id: "h-alif-long", title: "Was macht das Alif?",
-    question: "Du kennst بَ = ba. Hier steht dahinter ein ا. Was bewirkt es?",
-    stimulus: "بَا",
-    options: ["Es verlängert das a: bā (ā = langes a)", "Es fügt einen eigenen Konsonanten hinzu", "Es ist stumm und ändert nichts"], answer: 0,
-    reveal: "Fatha + ا dehnt das a: بَا = bā, etwa doppelt so lang wie بَ = ba. Alif ist hier kein Konsonant, sondern ein Dehnungsbuchstabe.",
-  },
-  {
-    id: "h-alif-join", title: "Warum hängt das zweite ب nicht an?",
-    question: "In diesem Wort ist das erste ب mit dem Alif verbunden, das zweite steht frei. Warum?",
-    stimulus: "بَاب",
-    options: ["Es ist ein anderer Buchstabe", "Alif verbindet sich nicht mit dem folgenden Buchstaben", "Das ist nur Schönschrift"], answer: 1,
-    reveal: "Alif ist ein Nicht-Verbinder: Es hängt sich nach links an nichts an. Deshalb beginnt das nächste Zeichen neu und das zweite ب steht in seiner freien Form. Es bleibt derselbe Buchstabe.",
-  },
-  {
-    id: "h-alif-consonant", title: "Ist Alif ein Konsonant wie ب?",
-    question: "Welche Aussage über ا stimmt am ehesten?",
-    stimulus: "ا",
-    options: ["Alif ist der Buchstabe für „a“, so wie ب der Buchstabe für „b“ ist", "Alif hat hier keinen eigenen Konsonantenlaut, er dehnt einen Vokal", UNKNOWN_OPTION], answer: 1,
-    reveal: "Häufiger Irrtum: „Alif = a“. Das kurze a schreibt die Fatha. Alif selbst ist hier ein Dehnungsbuchstabe. (Als Träger der Hamza hat er später eine weitere Rolle.)",
-  },
-];
-
-/* ---------- Phase 4: Elaboration ---------- */
-export interface ElabPrompt { id: string; question: string; model: string }
-export const ELAB: ElabPrompt[] = [
-  { id: "e-who", question: "Was liefert den Konsonanten und was den Vokal in بِ? Erkläre in eigenen Worten.",
-    model: "Der Buchstabe ب liefert den Konsonanten b. Das Kasra darunter liefert den kurzen Vokal i. Zusammen ergeben sie die Silbe bi." },
-  { id: "e-dots", question: "ب, ت und ث haben dieselbe Grundform. Warum ist es beim Lesen wichtig, zuerst auf die Punkte zu achten?",
-    model: "Weil nur die Punkte (Zahl und Lage) die drei Buchstaben unterscheiden. Ein Punkt unten ist ب, zwei oben ت, drei oben ث. Wer die Punkte übersieht, liest den falschen Buchstaben." },
-  { id: "e-alif", question: "Warum ist Alif kein Konsonant wie ب? Nenne zwei Unterschiede.",
-    model: "Alif hat keinen eigenen Konsonantenlaut, sondern dehnt den Vokal davor (بَا = bā). Außerdem hat es keine Punkte und verbindet sich nicht mit dem folgenden Buchstaben." },
-];
-
-export const ALIF_CONTRAST: { feature: string; alif: string; others: string }[] = [
-  { feature: "Rolle", alif: "Dehnungsbuchstabe: macht ein kurzes a lang (ā)", others: "Konsonanten: b, t, th" },
-  { feature: "Eigener Konsonantenlaut", alif: "nein (hier)", others: "ja" },
-  { feature: "Punkte", alif: "keine", others: "ب 1 unten · ت 2 oben · ث 3 oben" },
-  { feature: "Verbindung nach links", alif: "nie (Nicht-Verbinder)", others: "ja, beidseitig" },
-  { feature: "Form", alif: "senkrechter Strich", others: "gemeinsame Bogen-Grundform" },
-];
+export type Confidence = "sure" | "unsure" | "guess";
+export const CONFIDENCE_LABEL: Record<Confidence, string> = { sure: "Ich bin mir sicher", unsure: "Eher vermutet", guess: "Geraten" };

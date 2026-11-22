@@ -1,24 +1,21 @@
 "use client";
-import { ITEM_BY_ID } from "@/lektion/content/lektion1";
+import { COMPETENCE_LABEL, COMPETENCES, type Competence } from "@/lektion/domain/lektion/competence";
 import { correctAnswerOf, taskFromId, type TaskResult } from "@/lektion/domain/lektion/tasks";
-import { Ar } from "@/lektion/ui/parts";
+import { Ar, RichText } from "@/lektion/ui/parts";
 
-export const share = (rs: TaskResult[]) => rs.length ? rs.filter((r) => r.correctness === "right").length / rs.length : 0;
+export const share = (rs: TaskResult[]) => (rs.length ? rs.filter((r) => r.correctness === "right").length / rs.length : 0);
+export const pct = (x: number) => `${Math.round(x * 100)} %`;
 
-/** Auswertung einer Ergebnisliste: Anteil nach Aufgabenfamilie und Fehlerliste mit Begründung. */
+/** Auswertung nach Kompetenz (nie als ein Gesamtwert) plus Fehlerliste mit Begründung. */
 export function ResultBreakdown({ results }: { results: TaskResult[] }) {
-  const families = ["letter", "vowel", "syllable", "word", "concept"] as const;
-  const names = { letter: "Buchstaben", vowel: "Vokalzeichen", syllable: "Silben", word: "Wörter", concept: "Regeln" };
-  const fam = (r: TaskResult) => ITEM_BY_ID.get(r.itemId)!.kind;
   const wrong = results.filter((r) => r.correctness !== "right");
   return (
     <div className="stack">
       <div className="kpis">
-        {families.map((f) => {
-          const rs = results.filter((r) => fam(r) === f);
+        {COMPETENCES.map((c: Competence) => {
+          const rs = results.filter((r) => r.competence === c);
           if (!rs.length) return null;
-          const ok = rs.filter((r) => r.correctness === "right").length;
-          return <div key={f} className="kpi"><b>{ok}/{rs.length}</b><small>{names[f]}</small></div>;
+          return <div key={c} className="kpi"><b>{rs.filter((r) => r.correctness === "right").length}/{rs.length}</b><small>{COMPETENCE_LABEL[c]}</small></div>;
         })}
       </div>
       {wrong.length > 0 ? (
@@ -28,14 +25,14 @@ export function ResultBreakdown({ results }: { results: TaskResult[] }) {
             return (
               <article key={r.taskId} className="cmp" data-ok="false">
                 {t.ar && <Ar size="body">{t.ar}</Ar>}
-                <p><strong>{t.prompt}</strong></p>
-                <p><span className="muted">Deine Antwort:</span> {r.answer || "–"} · <span className="muted">Richtig:</span> <strong>{correctAnswerOf(t)}</strong>{r.correctness === "lengthOnly" ? <span className="tag"> Länge fehlte</span> : null}</p>
-                <p className="muted">{t.explain}</p>
+                <p><strong><RichText text={t.prompt} /></strong></p>
+                <p><span className="muted">Deine Antwort:</span> <RichText text={r.answer || "–"} /> · <span className="muted">Richtig:</span> <strong><RichText text={correctAnswerOf(t)} /></strong>{r.correctness === "lengthOnly" ? <span className="tag"> Länge fehlte</span> : null}</p>
+                <p className="muted"><RichText text={t.explain} /></p>
               </article>
             );
           })}
         </section>
-      ) : <p className="notice" role="status">Alles richtig. Die Wiederholungen in Phase 7 sichern das auf lange Sicht.</p>}
+      ) : <p className="notice" role="status">Alles richtig in diesem Durchgang.</p>}
     </div>
   );
 }

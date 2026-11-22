@@ -10,6 +10,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss(), viteSingleFile()],
   resolve: {
     alias: [
+      { find: "@/lektion/audio/urls", replacement: path.resolve(import.meta.dirname, "standalone/audio-urls.ts") },
       { find: "@", replacement: path.resolve(import.meta.dirname, "src") },
       { find: "next/link", replacement: path.resolve(import.meta.dirname, "standalone/next-link.tsx") },
       { find: "next/navigation", replacement: path.resolve(import.meta.dirname, "standalone/next-navigation.ts") },
