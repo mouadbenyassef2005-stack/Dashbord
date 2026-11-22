@@ -114,7 +114,9 @@ export function variantCount(itemId: string): number {
   return k === "letter" ? 3 + a : k === "vowel" ? 2 + 2 * a : k === "syllable" ? 3 + 2 * a : k === "word" ? 3 : k === "concept" ? 1 : 0;
 }
 
-export function makeTask(itemId: string, variant: number, rnd: Rnd = Math.random): Task {
+export interface Scope { letters?: string[]; vowels?: string[] }
+
+export function makeTask(itemId: string, variant: number, rnd: Rnd = Math.random, scope: Scope = {}): Task {
   const item = ITEM_BY_ID.get(itemId);
   if (!item) throw new Error(`Unbekanntes Item ${itemId}`);
   if (variant >= variantCount(itemId)) throw new Error(`Variante ${variant} existiert nicht für ${itemId}`);
@@ -153,9 +155,12 @@ export function makeTask(itemId: string, variant: number, rnd: Rnd = Math.random
   if (item.kind === "syllable") {
     const s = syllableById.get(itemId)!;
     const ex = syllableExplain(s);
-    const near = SYLLABLES.filter((o) => o.id !== s.id && (o.letterId === s.letterId || o.vowel === s.vowel));
+    // Kurze Silben werden nie mit langen (ā) gemischt, solange ausdrücklich nichts anderes verlangt ist: Längen gehören nicht in den ersten Lernpfad.
+    const vowelScope = scope.vowels ?? (s.vowel === "long" ? undefined : ["fatha", "kasra", "damma"]);
+    const inScope = (o: (typeof SYLLABLES)[number]) => (!scope.letters || scope.letters.includes(o.letterId)) && (!vowelScope || vowelScope.includes(o.vowel));
+    const near = SYLLABLES.filter((o) => o.id !== s.id && inScope(o) && (o.letterId === s.letterId || o.vowel === s.vowel));
     const nearFirst = shuffle(near, rnd);
-    const twin = SYLLABLES.find((o) => o.letterId === s.letterId && ((s.vowel === "long" && o.vowel === "fatha") || (s.vowel === "fatha" && o.vowel === "long")));
+    const twin = SYLLABLES.find((o) => inScope(o) && o.letterId === s.letterId && ((s.vowel === "long" && o.vowel === "fatha") || (s.vowel === "fatha" && o.vowel === "long")));
     const ordered = twin ? [twin, ...nearFirst.filter((o) => o !== twin)] : nearFirst;
     const trOpts = (list: typeof ordered): Opt[] => list.map((o) => ({ text: o.tr, item: o.id }));
     const arOpts = (list: typeof ordered): Opt[] => list.map((o) => ({ text: o.ar, item: o.id }));
@@ -262,4 +267,83 @@ export function extraTasks(wrong: TaskResult[], max: number, rnd: Rnd = Math.ran
     if (out.length >= max) break;
   }
   return interleaveTasks(out);
+}
+
+/* ---------- Aufgaben für den Lernpfad (kleine, schrittweise Pools) ---------- */
+/** Neutrale Ablenker-Zeichen, die in dieser Lernstrecke NICHT gelernt werden. Sie dienen nur dem Unterscheiden. */
+export const FILLER_LETTERS = ["ل", "د", "ر", "و", "م", "ح", "ع", "س"];
+const FILLER_MARKS = ["\u0652", "\u0651"]; // Sukun, Shadda: später
+
+export type PathTaskSpec =
+  | { t: "letter"; letter: string; mode: "find" | "name" | "hear" | "feature"; pool: string[]; fill?: number }
+  | { t: "mark"; vowel: VowelId; mode: "find" | "name" | "place" | "sound" | "hear"; pool: VowelId[] }
+  | { t: "syl"; id: string; v: number; letters?: string[]; vowels?: string[] }
+  | { t: "custom"; id: string; itemId: string; competence: Competence; prompt: string; ar?: string; options: string[]; optionsAr?: boolean; answer: number; explain: string };
+
+const SOUNDS: Opt[] = (["fatha", "kasra", "damma"] as const).map((v) => ({ text: VOWEL_LATIN[v], item: `vowel:${v}` }));
+
+/**
+ * Baut eine Aufgabe für den Lernpfad. Optionen kommen nur aus dem angegebenen Pool plus neutralen Ablenkern,
+ * damit nie Buchstaben oder Zeichen auftauchen, die noch nicht eingeführt sind. Gibt null zurück, wenn die Aufgabe
+ * mit dem Pool nicht sinnvoll ist (z. B. Auswahl mit nur einer Option) oder eine Aufnahme fehlt.
+ */
+export function pathTask(spec: PathTaskSpec, rnd: Rnd = Math.random): Task | null {
+  if (spec.t === "custom") {
+    const correct = spec.options[spec.answer];
+    return choice({ id: spec.id, itemId: spec.itemId, family: "letter", competence: spec.competence, prompt: spec.prompt, ar: spec.ar, explain: spec.explain, novel: true }, { text: correct, item: null }, spec.options.map((text) => ({ text, item: null })), !!spec.optionsAr, rnd, spec.options.length);
+  }
+  if (spec.t === "syl") return variantCount(spec.id) > spec.v ? makeTask(spec.id, spec.v, rnd, { letters: spec.letters, vowels: spec.vowels }) : null;
+
+  if (spec.t === "letter") {
+    const lid = spec.letter as (typeof L1_LETTER_IDS)[number];
+    const itemId = `letter:${lid}`;
+    const poolIds = spec.pool.includes(lid) ? spec.pool : [...spec.pool, lid];
+    const glyphs: Opt[] = poolIds.map((x) => ({ text: letterCh(x), item: `letter:${x}` }));
+    const fillN = Math.max(0, Math.min(spec.fill ?? Math.max(0, 3 - glyphs.length), FILLER_LETTERS.length));
+    const filler: Opt[] = shuffle(FILLER_LETTERS, rnd).slice(0, fillN).map((c) => ({ text: c, item: null }));
+    const all = [...glyphs, ...filler];
+    const mine = glyphs.find((o) => o.item === itemId)!;
+    const nm = letterName(lid), ch = letterCh(lid);
+    const base = (competence: Competence, prompt: string, extra: Partial<Base> = {}) =>
+      ({ id: `${itemId}#p-${spec.mode}-${spec.pool.join("")}`, itemId, family: "letter" as Family, competence, prompt, explain: `${ch} ist ${nm}: ${FEATURE[lid].text}.`, novel: false, ...extra });
+    if (spec.mode === "find") return choice(base("visual", `Tippe auf ${nm}.`), mine, all, true, rnd);
+    if (spec.mode === "feature") return choice(base("visual", `Welches Zeichen ist ${FEATURE[lid].text}?`), mine, all, true, rnd);
+    if (spec.mode === "hear") {
+      const aud = audioOf(itemId);
+      return aud ? choice(base("sound", "Welches Zeichen hörst du?", { audioId: aud }), mine, all, true, rnd) : null;
+    }
+    const names: Opt[] = poolIds.map((x) => ({ text: letterName(x), item: `letter:${x}` }));
+    return names.length >= 3 ? choice(base("visual", "Wie heißt dieses Zeichen?", { ar: ch }), names.find((o) => o.item === itemId)!, names, false, rnd) : null;
+  }
+
+  const v = spec.vowel;
+  const itemId = `vowel:${v}`;
+  const poolIds = spec.pool.includes(v) ? spec.pool : [...spec.pool, v];
+  const marks: Opt[] = poolIds.map((x) => ({ text: DOTTED + MARK[x], item: `vowel:${x}` }));
+  const fillMarks: Opt[] = FILLER_MARKS.map((m) => ({ text: DOTTED + m, item: null }));
+  const base = (competence: Competence, prompt: string, extra: Partial<Base> = {}) =>
+    ({ id: `${itemId}#p-${spec.mode}-${spec.pool.join("")}`, itemId, family: "vowel" as Family, competence, prompt, explain: `${VOWEL_NAME[v]}: kurzes „${VOWEL_LATIN[v]}“, steht ${VOWEL_INFO[v].place}.`, novel: false, ...extra });
+  const mine = marks.find((o) => o.item === itemId)!;
+  if (spec.mode === "find") return choice(base("vowel", `Tippe auf die ${VOWEL_NAME[v]}.`), mine, [...marks, ...fillMarks], true, rnd, 3);
+  if (spec.mode === "name") {
+    const names: Opt[] = poolIds.map((x) => ({ text: VOWEL_NAME[x], item: `vowel:${x}` }));
+    return names.length >= 2 ? choice(base("vowel", "Wie heißt dieses Zeichen?", { ar: DOTTED + MARK[v] }), names.find((o) => o.item === itemId)!, names, false, rnd, 3) : null;
+  }
+  if (spec.mode === "place")
+    return choice(base("vowel", `Wo steht die ${VOWEL_NAME[v]}?`, { ar: DOTTED + MARK[v] }), { text: v === "kasra" ? "unter dem Buchstaben" : "über dem Buchstaben", item: null }, [{ text: v === "kasra" ? "über dem Buchstaben" : "unter dem Buchstaben", item: null }], false, rnd, 2);
+  if (spec.mode === "sound") return choice(base("vowel", "Welchen kurzen Vokal zeigt es an?", { ar: DOTTED + MARK[v] }), SOUNDS.find((o) => o.item === itemId)!, SOUNDS.filter((o) => poolIds.includes(o.item!.split(":")[1] as VowelId) || true), false, rnd, 3);
+  const aud = audioOf(itemId);
+  return aud ? choice(base("listen", "Welchen kurzen Vokal hörst du?", { audioId: aud }), SOUNDS.find((o) => o.item === itemId)!, SOUNDS, false, rnd, 3) : null;
+}
+
+export function pathTasks(specs: PathTaskSpec[], rnd: Rnd = Math.random): Task[] {
+  return specs.map((sp) => pathTask(sp, rnd)).filter((t): t is Task => !!t);
+}
+
+/** Übungs- und Nachtest-Aufgaben für ein verwechseltes Paar. Beide Sätze sind disjunkt: Der Nachtest enthält nie eine Aufgabe aus der Übung. */
+export function drillSets(a: string, b: string, rnd: Rnd = Math.random, size = { practice: 4, retest: 4 }): { practice: Task[]; retest: Task[] } {
+  const pairs: Spec[] = [];
+  for (const id of [a, b]) for (let v = 0; v < variantCount(id); v++) pairs.push([id, v]);
+  const mixed = shuffle(pairs, rnd);
+  return { practice: buildSet(mixed.slice(0, size.practice), rnd), retest: buildSet(mixed.slice(size.practice, size.practice + size.retest), rnd) };
 }

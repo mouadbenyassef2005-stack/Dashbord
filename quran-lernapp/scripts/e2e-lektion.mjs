@@ -1,5 +1,5 @@
 // E2E gegen laufende App. Nutzung: node scripts/e2e-lektion.mjs http://localhost:3000 ./screenshots
-// Für die Einzeldatei: node scripts/e2e-lektion.mjs "file:///pfad/arabisch-lektion-1.html" ./screenshots hash
+// Einzeldatei: node scripts/e2e-lektion.mjs "file:///pfad/arabisch-lektion-1.html" ./screenshots hash
 import { createRequire } from "node:module";
 import { mkdirSync } from "node:fs";
 const require = createRequire(import.meta.url);
@@ -8,324 +8,248 @@ const base = process.argv[2] ?? "http://localhost:3000";
 const out = process.argv[3] ?? "./screenshots";
 const hash = process.argv[4] === "hash";
 const url = (p) => (hash ? `${base}#${p}` : base + p);
-/** Seitenwechsel; bei Hash-Routing (Einzeldatei) wird neu geladen, damit gespeicherter Stand gelesen wird. */
-const go = async (p) => { await page.goto(url(p)); if (hash) await page.reload(); };
 mkdirSync(out, { recursive: true });
 let failed = 0;
 const check = (name, cond, extra = "") => { console.log(`${cond ? "PASS" : "FAIL"}  ${name} ${cond ? "" : extra}`); if (!cond) failed++; };
 
-/* ---------- Lösungswörterbuch (nur für den Test: liest Reiz und Aufgabe und wählt die richtige Option) ---------- */
+/* ---------- Lösungswörterbuch (nur Test) ---------- */
 const NAME = { "ا": "Alif", "ب": "Bā", "ت": "Tā", "ث": "Thā" };
 const GLYPH = Object.fromEntries(Object.entries(NAME).map(([g, n]) => [n, g]));
 const C = { ba: "ب", ta: "ت", tha: "ث" }, ON = { ba: "b", ta: "t", tha: "th" };
 const V = { fatha: ["َ", "a", "Fatha"], kasra: ["ِ", "i", "Kasra"], damma: ["ُ", "u", "Damma"] };
-const SYL = {}; for (const c of Object.keys(C)) { for (const [m, l] of Object.values(V)) SYL[C[c] + m] = ON[c] + l; SYL[C[c] + "َ" + "ا"] = ON[c] + "ā"; }
+const SYL = {}; for (const c of Object.keys(C)) for (const [m, l] of Object.values(V)) SYL[C[c] + m] = ON[c] + l;
 const SYL_AR = Object.fromEntries(Object.entries(SYL).map(([a, t]) => [t, a]));
-const WORDS = { "بَاب": ["bāb", "Tür"], "ثَابِت": ["thābit", "fest, beständig"], "تَاب": ["tāb", "er bereute (kehrte um)"], "ثَبَات": ["thabāt", "Beständigkeit, Festigkeit"] };
 const FEATURE = [["senkrechter Strich", "ا"], ["einem Punkt darunter", "ب"], ["zwei Punkten darüber", "ت"], ["drei Punkten darüber", "ث"]];
-const VOW_AR = Object.fromEntries(Object.values(V).map(([m, l, n]) => ["◌" + m, { name: n, l }]));
+const MARKS = Object.fromEntries(Object.values(V).map(([m, l, n]) => ["ـ" + m, { name: n, l }]));
+const DOTS = { "ب": "1 unten", "ت": "2 oben", "ث": "3 oben" };
 
 function solve({ prompt, ar, audio, type }) {
   const a = (ar ?? "").trim();
-  if (type === "type") return (SYL[a] ?? WORDS[a]?.[0] ?? "x");
+  if (type === "type") return SYL[a] ?? "x";
   if (audio) {
     const [kind, ...rest] = audio.split("-");
     if (kind === "name") return "ا";
     if (kind === "sound") return C[rest[0]];
-    if (kind === "vowel") return { prompt, l: V[rest[0]][1], mark: "◌" + V[rest[0]][0] };
+    if (kind === "vowel") return { l: V[rest[0]][1], mark: "ـ" + V[rest[0]][0] };
     if (kind === "syl") { const [c, v] = rest; return { tr: ON[c] + V[v][1], ar: C[c] + V[v][0] }; }
   }
-  if (prompt.startsWith("Wie heißt dieser Buchstabe")) return NAME[a];
-  const m = prompt.match(/^Welcher Buchstabe ist (.+)\?$/);
-  if (m) return GLYPH[m[1]] ?? FEATURE.find(([f]) => m[1].includes(f))?.[1];
-  if (prompt.startsWith("Wie heißt dieses Vokalzeichen")) return VOW_AR[a]?.name;
-  const kv = prompt.match(/Welches Zeichen steht für kurzes „(\w)“/);
-  if (kv) return Object.keys(VOW_AR).find((k) => VOW_AR[k].l === kv[1]);
+  let m;
+  if (prompt.startsWith("Wie viele Punkte")) return DOTS[a];
+  if (prompt.startsWith("Ist das")) return "keiner der drei";
+  if (prompt === "Wie heißt dieses Zeichen?" || prompt === "Wie heißt dieser Buchstabe?") return NAME[a] ?? MARKS[a]?.name;
+  if ((m = prompt.match(/^Welcher Buchstabe ist (.+)\?$/))) return GLYPH[m[1]] ?? FEATURE.find(([f]) => m[1].includes(f))?.[1];
+  if ((m = prompt.match(/^Tippe auf (?:die )?(\w+)\.$/))) return GLYPH[m[1]] ?? Object.keys(MARKS).find((k) => MARKS[k].name === m[1]);
+  if ((m = prompt.match(/^Welches Zeichen ist (.+)\?$/))) return FEATURE.find(([f]) => m[1].includes(f))?.[1];
+  if ((m = prompt.match(/^Wo steht die (\w+)\?$/))) return m[1] === "Kasra" ? "unter dem Buchstaben" : "über dem Buchstaben";
+  if (prompt.startsWith("Welchen kurzen Vokal zeigt")) return MARKS[a]?.l;
   if (prompt.startsWith("Wie wird diese Silbe gelesen")) return SYL[a];
-  const ks = prompt.match(/Welche Silbe ist „(\w+)“/);
-  if (ks) return SYL_AR[ks[1]];
-  if (prompt.startsWith("Wie wird dieses Wort gelesen")) return WORDS[a]?.[0];
-  if (prompt.startsWith("Was bedeutet")) return WORDS[a]?.[1];
-  if (prompt.startsWith("Was tut")) return "Es dehnt das a zu ā";
-  if (prompt.startsWith("Welcher dieser Buchstaben verbindet")) return "ا";
-  if (prompt.startsWith("Wo steht das Kasra")) return "unter dem Buchstaben";
+  if ((m = prompt.match(/Welche Silbe ist „(\w+)“/))) return SYL_AR[m[1]];
   return null;
 }
-const pickIdx = (texts, ans, prompt) => {
+const pick = (texts, ans, prompt) => {
+  const clean = (t) => t.trim().replace(/\s*[✓✗]$/, "");
   if (ans == null) return 0;
   if (typeof ans === "object") {
-    const cand = prompt.includes("Vokalzeichen gehört") ? [ans.mark] : prompt.includes("Welchen kurzen Vokal") ? [ans.l] : prompt.includes("Silbe ist das") ? [ans.ar] : prompt.includes("Silbe hörst") ? [ans.tr] : [ans.tr, ans.ar];
-    return Math.max(0, texts.findIndex((t) => cand.includes(t.trim().replace(/\s*[✓✗]$/, ""))));
+    const want = prompt.includes("Welchen kurzen Vokal") ? [ans.l] : prompt.includes("Vokalzeichen") ? [ans.mark] : prompt.includes("Silbe ist das") ? [ans.ar] : prompt.includes("Silbe hörst") ? [ans.tr] : [ans.tr, ans.ar];
+    return Math.max(0, texts.findIndex((t) => want.includes(clean(t))));
   }
-  const i = texts.findIndex((t) => t.trim().replace(/\s*[✓✗]$/, "") === ans);
+  const i = texts.findIndex((t) => clean(t) === ans);
   return i >= 0 ? i : 0;
 };
 
 const browser = await chromium.launch();
-const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
-await ctx.addInitScript(() => {
-  // Wiedergabe protokollieren (Headless-Chromium hat oft keine AAC-Codecs); echte Browser spielen m4a ab.
-  window.__played = [];
-  const orig = HTMLMediaElement.prototype.play;
-  HTMLMediaElement.prototype.play = function () { window.__played.push({ src: this.src.slice(0, 80), rate: this.playbackRate }); return Promise.resolve(); };
-  void orig;
-});
+const mkCtx = (w, h) => browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 2 });
+const ctx = await mkCtx(360, 640);
+await ctx.addInitScript(() => { window.__played = []; HTMLMediaElement.prototype.play = function () { window.__played.push({ src: this.src.slice(0, 60), rate: this.playbackRate }); return Promise.resolve(); }; });
 const page = await ctx.newPage();
 const errors = [];
 page.on("pageerror", (e) => errors.push(String(e)));
 page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
-const shot = (n) => page.screenshot({ path: `${out}/${n}.png`, fullPage: true });
-const nav = () => page.locator(".phase-nav .btn-primary");
-const noOverflow = async (label) => {
-  const bad = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1 ? [...document.querySelectorAll("main *")].filter((e) => e.getBoundingClientRect().right > window.innerWidth + 1 && !e.closest(".scroll-x, .stepper")).slice(0, 3).map((e) => e.className || e.tagName) : []);
-  check(`Kein horizontales Scrollen: ${label}`, bad.length === 0, JSON.stringify(bad));
-};
+const go = async (p) => { await page.goto(url(p)); if (hash) await page.reload(); await page.waitForSelector(".path, h1"); };
+const shot = (n) => page.screenshot({ path: `${out}/${n}.png` });
+const overflow = () => page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+const seen = []; // alle Bildschirmtexte je Lektion
 
-async function runTasks({ wrongFirst = false } = {}) {
-  let n = 0, rightTyped = 0, typed = 0;
-  for (let guard = 0; guard < 40; guard++) {
-    if (!(await page.locator(".task").count())) break;
-    const prompt = (await page.locator(".task h2").first().textContent()).trim();
-    const stim = page.locator(".task .stim");
-    const ar = (await stim.locator(".ar").count()) ? (await stim.locator(".ar").first().textContent()).trim() : "";
-    const audio = await stim.getAttribute("data-audio");
-    const isType = (await page.locator('.task input[type="text"]').count()) > 0;
-    const ans = solve({ prompt, ar, audio, type: isType ? "type" : "choice" });
-    if (isType) {
-      typed++;
-      await page.locator('.task input[type="text"]').fill(wrongFirst && n === 0 ? "zzz" : ans);
-      await page.getByRole("button", { name: "Prüfen" }).click();
-      if (!wrongFirst && (await page.getByText("Richtig.", { exact: true }).count())) rightTyped++;
-    } else {
-      const opts = page.locator(".task .options .opt");
-      const texts = await opts.allTextContents();
-      await opts.nth(wrongFirst && n === 0 ? (pickIdx(texts, ans, prompt) + 1) % texts.length : pickIdx(texts, ans, prompt)).click();
-    }
-    n++;
-    await page.getByRole("button", { name: /^(Weiter|Abschließen)$/ }).first().click();
-  }
-  return { n, typed, rightTyped };
-}
-
-async function openPhase(p) { await page.locator(".stepper button").nth(p - 1).click(); }
-const phaseNow = async () => Number((await page.locator(".stepper button[aria-current=step]").getAttribute("aria-label")).match(/Phase (\d)/)[1]);
-
-async function draw() {
-  const c = page.locator("canvas.pad-canvas"); await c.waitFor(); await c.scrollIntoViewIfNeeded(); const b = await c.boundingBox();
-  await page.mouse.move(b.x + b.width * 0.5, b.y + b.height * 0.1); await page.mouse.down();
-  for (let k = 1; k <= 20; k++) await page.mouse.move(b.x + b.width * 0.5, b.y + b.height * (0.1 + 0.8 * k / 20));
-  await page.mouse.up();
-}
-
-/** Bearbeitet die aktuelle Phase bis zu ihrem Abschluss-Button. Gibt Statistik zurück. */
-async function drivePhase({ answerHyp = 0 } = {}) {
-  const startPhase = await phaseNow();
-  const stats = { skipped: 0, tasks: 0 };
+async function playLesson({ wrongFirst = false, label = "" } = {}) {
+  const texts = []; let fb = null, wrongDone = false, n = 0, tasks = 0, hyps = 0, wrongSeen = false, footVisible = true, overflowSeen = false;
   for (let guard = 0; guard < 60; guard++) {
-    // Hypothesen
-    while (await page.getByRole("button", { name: "Hypothese festhalten" }).count()) {
-      const radios = page.getByRole("radio");
-      await radios.nth(answerHyp).click();
-      await page.getByRole("radio", { name: "Eher vermutet" }).click();
-      await page.getByRole("button", { name: "Hypothese festhalten" }).click();
+    if (await page.locator(".lp-end").count()) break;
+    await page.locator(".lp-foot").waitFor();
+    texts.push(await page.locator(".lp-main").first().innerText());
+    const fbox = await page.locator(".lp-foot .btn-big").first().boundingBox();
+    const vh = page.viewportSize().height;
+    if (!fbox || fbox.y + fbox.height > vh + 1) footVisible = false;
+    if (await overflow()) overflowSeen = true;
+    if (await page.locator(".lp-opt").count()) {
+      const isHyp = (await page.locator(".lp-eyebrow", { hasText: "Vermute" }).count()) > 0;
+      const prompt = ((await page.locator("#lp-q").first().textContent()) ?? "").trim();
+      const stim = page.locator(".lp-stim");
+      const ar = (await stim.locator(".ar").count()) ? (await stim.locator(".ar").first().textContent()).trim() : "";
+      const audio = await stim.getAttribute("data-audio").catch(() => null);
+      const texts2 = await page.locator(".lp-opt").allTextContents();
+      let idx = isHyp ? 0 : pick(texts2, solve({ prompt, ar, audio, type: "choice" }), prompt);
+      const wrongNow = wrongFirst && !isHyp && !wrongDone;
+      if (wrongNow) idx = (idx + 1) % texts2.length;
+      await page.locator(".lp-opt").nth(idx).click();
+      if (isHyp) { hyps++; await page.getByRole("button", { name: "Weiter" }).click(); }
+      else if ((await page.getByRole("button", { name: "Prüfen" }).count()) === 0) {
+        tasks++; await page.getByRole("button", { name: "Weiter" }).click();   // zurückgestellte Rückmeldung (Nachtest)
+      } else {
+        tasks++;
+        await page.getByRole("button", { name: "Prüfen" }).click();
+        if (wrongNow) { wrongDone = true; fb = await page.locator(".lp-foot").innerText(); wrongSeen = fb.includes("Nicht ganz") && fb.includes("Richtig:"); }
+        await page.getByRole("button", { name: /^(Weiter|Fertig)$/ }).click();
+      }
+      n++;
+    } else if (await page.locator(".lp-input").count()) {
+      const prompt = ((await page.locator("#lp-q").textContent()) ?? "").trim();
+      const ar = (await page.locator(".lp-stim .ar").first().textContent()).trim();
+      await page.locator(".lp-input").fill(solve({ prompt, ar, type: "type" })); tasks++;
+      await page.getByRole("button", { name: "Prüfen" }).click(); await page.getByRole("button", { name: /^(Weiter|Fertig)$/ }).click(); n++;
+    } else {
+      await page.locator(".lp-foot .btn-big").last().click(); n++;
     }
-    // Elaboration
-    if (await page.locator("textarea").count()) {
-      for (const ta of await page.locator("textarea").all()) await ta.fill("Der Buchstabe liefert den Konsonanten, das Zeichen den Vokal.");
-      for (let i = 0; i < 4; i++) { const b = page.getByRole("button", { name: "Musterantwort zeigen" }); if (await b.count()) await b.first().click(); }
-      const rs = page.getByRole("radio", { name: "Passt" });
-      for (let i = 0; i < (await rs.count()); i++) await rs.nth(i).click();
-    }
-    // Selbsteinschätzung
-    if (await page.getByRole("radio", { name: /Bei null/ }).count()) await page.getByRole("radio", { name: /Bei null/ }).click();
-    // Vorab-Fragen mit „Weiß ich nicht“
-    while ((await page.getByRole("button", { name: "Weiß ich nicht" }).count())) { await page.getByRole("button", { name: "Weiß ich nicht" }).click(); await page.getByRole("button", { name: /^(Weiter|Abschließen)$/ }).first().click(); }
-    // Aufgaben
-    if (await page.locator(".task").count()) { const r = await runTasks(); stats.tasks += r.n; }
-    // Baukasten
-    if (await page.getByRole("button", { name: "Punkt oben 1" }).count()) {
-      const t = async (n, on) => { const b = page.getByRole("button", { name: n }); if ((await b.getAttribute("aria-pressed")) !== String(on)) await b.click(); };
-      await t("Punkt unten 1", true); await t("Punkt unten 1", false);
-      await t("Punkt oben 1", true); await t("Punkt oben 2", true); await t("Punkt oben 3", true);
-    }
-    // Schreiben
-    while (await page.getByText(/Schreibaufgabe \d+ von/).count()) {
-      if (!(await page.locator("canvas.pad-canvas").count())) break;
-      await draw(); await page.getByRole("button", { name: "Prüfen" }).click();
-      const cont = page.getByRole("button", { name: "Weiter", exact: true }).first();
-      if ((await page.locator(".feedback").count()) && (await cont.count()) && !(await cont.isDisabled())) { const t = await page.locator(".phase-nav .btn-primary").textContent(); void t; }
-      const retryOrNext = page.locator(".task, .stack").getByRole("button", { name: "Weiter", exact: true });
-      if ((await retryOrNext.count()) > 1) await retryOrNext.first().click();
-      else if (await page.getByRole("button", { name: "Überspringen" }).count()) await page.getByRole("button", { name: "Überspringen" }).click();
-      else await retryOrNext.first().click();
-      await page.waitForTimeout(80);
-    }
-    // Hilfsschalter in Schritten
-    for (const name of ["Ich habe es angehört", "Ich habe die Lücken gefunden", "Ich habe es laut gesprochen", "Beispiel ثُ zeigen"]) { const b = page.getByRole("button", { name }); if (await b.count()) await b.first().click(); }
-    for (let i = 0; i < 4; i++) { const b = page.getByRole("button", { name: "Lesung zeigen" }); if (await b.count()) await b.first().click(); }
-    // Entscheidung
-    for (const name of [/Weiter zu Einheit \d/, /^Lektion abschließen$/, /^Trotzdem weiter$/]) { const b = page.getByRole("button", { name }).first(); if ((await page.locator("#rec").count()) && (await b.count()) && !(await page.locator(".phase-nav .btn-primary", { hasText: /Zu Einheit|Lektion abschließen/ }).count())) { await b.click(); break; } }
-    // Weiter / Überspringen
-    const label = ((await nav().textContent()) ?? "").trim();
-    const last = label !== "Weiter";
-    if (await nav().isEnabled()) { await nav().click(); if (last) return stats; }
-    else {
-      const skip = page.getByRole("button", { name: "Schritt überspringen" });
-      if (await skip.count()) { stats.skipped++; await skip.click(); if (last) return stats; } else await page.waitForTimeout(100);
-    }
-    void startPhase;
   }
-  throw new Error("drivePhase: kein Abschluss");
+  const end = await page.locator(".lp-main").innerText();
+  await page.locator(".lp-foot .btn-big").click();
+  await page.locator(".path").waitFor();
+  seen.push({ label, texts });
+  return { tasks, hyps, steps: n, end, wrongSeen, footVisible, overflowSeen };
 }
+const openCurrent = async () => { await page.locator(".node[data-state=current]").click(); await page.locator(".lp").waitFor(); };
 
-/* ===== Start ===== */
+/* ===== Start: Lernpfad ===== */
 await go("/");
-await page.getByRole("heading", { level: 1 }).first().waitFor();
-check("Start: Einheit 1 angeboten", (await page.textContent("body")).includes("Einheit 1 starten"));
-check("Start zeigt keinen Prozentwert als Lernerfolg", !/\d+\s?%/.test(await page.textContent("main")));
-await noOverflow("Start"); await shot("A-start");
+check("Lernpfad: vier Strecken in der verbindlichen Reihenfolge", JSON.stringify(await page.locator(".path-banner h2").allTextContents()) === JSON.stringify(["Buchstaben", "Tashkeel", "Buchstabe + Tashkeel", "Silben festigen"]));
+check("Nächste Lektion hervorgehoben (Alif)", (await page.locator(".node[data-state=current]").getAttribute("aria-label")).startsWith("Alif"));
+check("Nur eine Lektion offen, der Rest gesperrt", (await page.locator(".node[data-state=locked]").count()) === 22);
+check("Kein Dashboard: keine Prozentwerte, kein Streak", !/\d+\s?%|Serie|Streak|XP/.test(await page.textContent("main")));
+check("Kein horizontales Scrollen (Pfad, 360 px)", !(await overflow()));
+await shot("A-pfad");
+await page.locator(".node[data-state=locked]").first().click();
+check("Gesperrte Lektion: freundlicher Hinweis mit Wahl", (await page.locator(".lp-sheet").textContent()).includes("Schließe zuerst"));
+await page.getByRole("button", { name: "Abbrechen" }).click();
 
-/* ===== Einheit 1 ===== */
-await go("/lektion");
-await page.locator(".units").waitFor();
-check("Einheiten 2–4 sind anfangs gesperrt", (await page.locator(".units button[disabled]").count()) === 3);
-check("Alle 7 Phasen jederzeit öffenbar (nicht erzwungen linear)", (await page.locator(".stepper button[disabled]").count()) === 0);
-await noOverflow("Einheit 1 Ziel"); await shot("B-u1-ziel");
-await page.locator(".phase-nav .btn-primary").click();       // Landkarte
-await page.locator(".phase-nav .btn-primary").click();       // Vorwissen
-check("Vorwissen: Weiter gesperrt, Überspringen vorhanden", (await nav().isDisabled()) && (await page.getByRole("button", { name: "Schritt überspringen" }).count()) === 1);
-await page.getByRole("radio", { name: /Bei null/ }).click();
-for (let i = 0; i < 4; i++) { await page.getByRole("button", { name: "Weiß ich nicht" }).click(); await page.getByRole("button", { name: /^(Weiter|Abschließen)$/ }).first().click(); }
-await page.waitForTimeout(250);
-check("Phase 1 abschließbar", !(await nav().isDisabled()));
-await nav().click();
+/* ===== Strecke 1: vier Buchstaben, einzeln ===== */
+await openCurrent();
+check("Alif-Lektion: Vollbild mit Schließen und Fortschritt", (await page.locator(".lp-close").count()) === 1 && (await page.locator(".lp-bar").count()) === 1);
+check("Alif: Audio direkt beim Zeichen", (await page.getByRole("button", { name: /hören$/i }).count()) >= 1);
+await page.getByRole("button", { name: /hören$/i }).first().click();
+check("Alif: Aufnahme wird abgespielt (m4a)", (await page.evaluate(() => window.__played)).some((p) => p.src.startsWith("data:audio") || p.src.includes("name-alif")));
+let r = await playLesson({ wrongFirst: true, label: "b-alif" });
+check("Fehlerfeedback: „Nicht ganz“, richtige Antwort und Erklärung", r.wrongSeen);
+check("Falsche Aufgabe kommt am Ende noch einmal (mehr Schritte als Aufgaben)", r.steps > 6, String(r.steps));
+check("Ende-Bildschirm nennt Treffer beim ersten Mal", /von \d+ gleich beim ersten Mal richtig/.test(r.end), r.end);
+check("Fortschritt gespeichert: Alif geschafft, Bā als Nächstes", (await page.locator(".node[data-state=done]").count()) === 1 && (await page.locator(".node[data-state=current]").getAttribute("aria-label")).startsWith("Bā"));
+await page.reload(); await page.waitForSelector(".path");
+check("Fortschritt bleibt nach Neuladen", (await page.locator(".node[data-state=done]").count()) === 1);
+for (const id of ["Bā", "Tā", "Thā"]) { await openCurrent(); r = await playLesson({ label: `b-${id}` }); await page.waitForTimeout(50); }
+check("Alle vier Buchstaben einzeln abgeschlossen", (await page.locator(".node[data-state=done]").count()) === 4);
+check("Familie erst nach den vier Einführungen: nächste Lektion ist „Entdecken“", (await page.locator(".node[data-state=current]").getAttribute("aria-label")).startsWith("Entdecken"));
 
-// Phase 2: Alif-Schritt: Audio mit echter Datei
-await page.locator("h1", { hasText: "Alif" }).waitFor();
-check("Alif: Audio-Steuerelement am Buchstaben (kein Platzhalter)", (await page.getByRole("button", { name: /Name hören/ }).count()) >= 1);
-await page.getByRole("button", { name: /Name hören/ }).first().click();
-const played = await page.evaluate(() => window.__played);
-check("Alif: Aufnahme (m4a) angefordert", played.some((p) => p.src.includes("name-alif") || p.src.startsWith("data:audio/mp4")), JSON.stringify(played));
-await page.getByRole("button", { name: /Name hören, langsam/ }).first().click();
-check("Langsam-Wiedergabe nutzt reduzierte Rate", (await page.evaluate(() => window.__played)).some((p) => p.rate < 1));
-const codec = await page.evaluate(() => document.createElement("audio").canPlayType('audio/mp4; codecs="mp4a.40.2"'));
-console.log(`INFO  AAC-Wiedergabe im Testbrowser: ${codec || "nicht unterstützt (Test protokolliert nur den Abspielaufruf)"}`);
-if (!hash) {
-  const fetchOK = await page.evaluate(async () => { const r = await fetch("/audio/name-alif.m4a", { method: "HEAD" }).catch(() => null); return r ? `${r.status} ${r.headers.get("content-type")}` : "-1"; });
-  check("Audiodatei wird ausgeliefert (HTTP 200)", fetchOK.startsWith("200"), fetchOK);
-}
-await shot("C-u1-alif");
-await page.locator(".phase-nav .btn-secondary").waitFor();
-await page.getByRole("button", { name: "Schritt überspringen" }).click().catch(() => {});
+/* Entdecken (ohne Feedback) → Erklären → Anwenden → Wiederholung */
+await openCurrent();
+r = await playLesson({ label: "b-entdecken" });
+check("Hypothesen-Lektion: Vermutungen ohne sofortiges Feedback", r.hyps === 3 && r.tasks === 0);
+await openCurrent(); r = await playLesson({ label: "b-erklaeren" });
+await openCurrent(); r = await playLesson({ label: "b-anwenden" });
+await openCurrent(); r = await playLesson({ label: "b-wdh" });
+check("Strecke 1 abgeschlossen (8 von 8)", (await page.locator(".path-count").first().getAttribute("aria-label")) === "8 von 8 Lektionen geschafft");
 
-/* Rest von Einheit 1 mit generischem Treiber */
-await go("/lektion");
-await page.locator(".units").waitFor();
-await openPhase(2);
-let st = await drivePhase();       check("Phase 2 durchlaufen", true);
-await shot("D-u1-p3-start");
-st = await drivePhase();           check("Phase 3: Hypothesen festgehalten", true);
-check("Phase 3: kein Richtig/Falsch-Feedback", true);
-st = await drivePhase();           await shot("E-u1-p4");
-st = await drivePhase();           check("Phase 5 durchlaufen", st.tasks >= 8, JSON.stringify(st));
-st = await drivePhase();           check("Phase 6 abgeschlossen", true);
-check("Phase 6: Entscheidung gespeichert → Einheit 2 offen", (await page.locator(".units button[disabled]").count()) === 2);
-await shot("F-u1-p7");
-st = await drivePhase();           // Phase 7 → Einheit 2
-check("Nach Einheit 1 beginnt Einheit 2", (await page.locator(".units button[aria-current=step]").textContent()).includes("Silben mit kurzem a"));
+/* ===== Strecke 2: Tashkeel einzeln ===== */
+await openCurrent();
+const firstMark = await page.locator(".lp-main").innerText();
+check("Fatha: erst nur das Zeichen, mit Namen", firstMark.includes("Das ist die Fatha"));
+await page.locator(".lp-foot .btn-big").click();
+check("Fatha: Position erklärt (über dem Buchstaben)", (await page.locator(".lp-main").innerText()).includes("über"));
+await page.locator(".lp-foot .btn-big").click();
+check("Fatha: Bedeutung mit Audio und Zungenposition", (await page.locator(".lp-main").innerText()).includes("kurzen „a“") && (await page.getByRole("button", { name: /hören$/i }).count()) === 1);
+await page.getByRole("button", { name: /hören$/i }).click();
+check("Vokal-Aufnahme wird abgespielt (m4a)", (await page.evaluate(() => window.__played)).some((p) => p.src.startsWith("data:audio") || p.src.includes("vowel-fatha")));
+await page.locator(".lp-close").click(); await page.getByRole("button", { name: "Beenden", exact: true }).click().catch(() => {});
+await page.locator(".path").waitFor();
+await openCurrent(); r = await playLesson({ label: "t-fatha" });
+await openCurrent();
+check("Kasra: eigene Mini-Lektion, Position unten", (await page.locator(".lp-main").innerText()).includes("Das ist die Kasra"));
+await page.locator(".lp-foot .btn-big").click();
+check("Kasra: „unter“ dem Buchstaben", (await page.locator(".lp-main").innerText()).includes("unter"));
+await page.locator(".lp-foot .btn-big").click(); await page.locator(".lp-foot .btn-big").click();
+r = await playLesson({ label: "t-kasra" });
+await openCurrent(); r = await playLesson({ label: "t-damma" });
+await openCurrent(); r = await playLesson({ label: "t-wdh" });
+check("Strecke 2 abgeschlossen (4 von 4)", (await page.locator(".path-count").nth(1).getAttribute("aria-label")) === "4 von 4 Lektionen geschafft");
 
-/* ===== Einheiten 2 bis 4 ===== */
-for (const u of [2, 3, 4]) {
-  for (let p = 1; p <= 7; p++) {
-    if (await page.locator(".units button[aria-current=step]").count() === 0) break;
-    await drivePhase();
-    if (u === 4 && p === 7) break;
-  }
-  check(`Einheit ${u} durchlaufen`, true);
-  if (u < 4) check(`Einheit ${u + 1} geöffnet`, (await page.locator(".units button[disabled]").count()) === 3 - u);
-}
-await page.waitForTimeout(200);
-check("Abschluss der Lektion erreicht", (await page.textContent("body")).includes("Lektion 1 durchlaufen"));
-check("Abschluss warnt: Lernweg ≠ Nachweis", (await page.textContent("body")).includes("kein Nachweis"));
-await shot("G-abschluss"); await noOverflow("Abschluss");
+/* ===== Strecke 3: Buchstabe + Tashkeel ===== */
+await openCurrent();
+const comp = await page.locator(".lp-main").innerText();
+check("Kombination beginnt mit ب + Fatha", comp.includes("ب + Fatha") && comp.includes("liefert „b“"));
+await shot("B-kombination");
+await page.locator(".lp-close").click(); await page.getByRole("button", { name: "Beenden", exact: true }).click().catch(() => {});
+await openCurrent(); r = await playLesson({ label: "k-ba" });
+await openCurrent(); r = await playLesson({ label: "k-entdecken" });
+check("Muster-Entdecken: vier Hypothesen aus Bekanntem (mit Ton)", r.hyps === 4, String(r.hyps));
+await openCurrent(); r = await playLesson({ label: "k-erklaeren" });
+await openCurrent(); r = await playLesson({ label: "k-ta" });
+await openCurrent(); r = await playLesson({ label: "k-tha" });
+await openCurrent(); r = await playLesson({ label: "k-wdh" });
+check("Strecke 3 abgeschlossen (6 von 6)", (await page.locator(".path-count").nth(2).getAttribute("aria-label")) === "6 von 6 Lektionen geschafft");
 
-/* ===== Kompetenzen getrennt ===== */
-await go("/profil");
-await page.locator("#board").waitFor();
-const areas = await page.locator(".area h3").allTextContents();
-check("Vier getrennte Kompetenzbereiche", JSON.stringify(areas) === JSON.stringify(["Visuell", "Phonologisch", "Motorisch", "Dekodieren"]), JSON.stringify(areas));
-check("Kein Gesamtprozentwert im Profil", !/\d+\s?%/.test(await page.textContent("main")));
-check("Aktivität und Können sind getrennt erklärt", (await page.textContent("main")).includes("nichts darüber, ob du den Inhalt beherrschst"));
-await noOverflow("Profil"); await shot("H-profil");
+/* ===== Strecke 4: Silben festigen ===== */
+for (const id of ["s-lesen", "s-hoeren", "s-zuordnen", "s-neu", "s-fehler"]) { await openCurrent(); r = await playLesson({ label: id }); }
+check("Strecke 4 abgeschlossen (5 von 5)", (await page.locator(".path-count").nth(3).getAttribute("aria-label")) === "5 von 5 Lektionen geschafft");
+check("Pfad komplett: keine nächste Lektion", (await page.locator(".node[data-state=current]").count()) === 0);
+await shot("C-pfad-fertig");
 
-/* ===== Üben: Wiederholung nach Plan ===== */
+/* ===== Inhaltsgrenzen der ersten Lernstrecke ===== */
+const all = seen.map((s) => s.texts.join("\n")).join("\n");
+check("Keine Wörter im ersten Pfad", !/بَاب|ثَابِت|تَاب|ثَبَات|Wörter lesen/.test(all.replace("Wörter, lange Vokale", "")));
+check("Keine langen Vokale (ā-Silben) in Aufgaben", !/(^|\s)(bā|tā|thā)(\s|$)|[بتث]َا/.test(all));
+const s1 = seen.filter((s) => s.label.startsWith("b-")).map((s) => s.texts.join("\n")).join("\n");
+check("Strecke 1: kein einziges Tashkeel-Zeichen", !/[ً-ْ]/.test(s1));
+const s2 = seen.filter((s) => s.label.startsWith("t-")).map((s) => s.texts.join("\n")).join("\n");
+check("Strecke 2: Tashkeel ohne Buchstaben (nur Träger-Linie)", !/[ء-غف-ي]/.test(s2.replace(/Buchstabe|Konsonant/g, "")));
+const kba = seen.find((s) => s.label === "k-ba").texts.join("\n");
+check("Erste Kombination nutzt nur ب (kein ت/ث)", !/[تث]/.test(kba));
+
+/* ===== Üben, Profil ===== */
 await go("/ueben");
-await page.getByRole("heading", { level: 1 }).first().waitFor();
-check("Üben: freie Übung verfügbar", (await page.getByRole("button", { name: "Freie Übung starten" }).count()) === 1);
+check("Üben: fällige Wiederholungen oder freie Übung", (await page.getByRole("button", { name: "Freie Übung starten" }).count()) === 1);
 await page.getByRole("button", { name: "Freie Übung starten" }).click();
-const ru = await runTasks();
-check("Freie Übung: 12 Aufgaben", ru.n === 12, String(ru.n));
-await shot("I-ueben");
-
-/* ===== Persistenz ===== */
-await go("/profil"); await page.reload(); await page.locator("#board").waitFor();
-check("Kompetenzstand bleibt nach Neuladen", (await page.locator(".area .levels").count()) >= 2);
+await page.locator(".lp").waitFor();
+await playLesson({ label: "ueben" }).catch(() => {});
+await go("/profil");
+check("Profil: vier getrennte Kompetenzbereiche, kein Gesamtwert", JSON.stringify(await page.locator(".area h3").allTextContents()) === JSON.stringify(["Visuell", "Phonologisch", "Motorisch", "Dekodieren"]) && !/\d+\s?%/.test(await page.textContent("main")));
 
 /* ===== Verwechslung → gezielte Vergleichsübung ===== */
-await ctx.addInitScript(() => {});
-await go("/profil");
-await page.evaluate(() => {
-  const k = "qaidah.lektion.v2"; const s = JSON.parse(localStorage.getItem(k));
-  s.confusions = { "letter:ba~letter:ta": { a: "letter:ba", b: "letter:ta", count: 3, resolved: false, lastAt: Date.now() } };
-  localStorage.setItem(k, JSON.stringify(s));
-});
-await page.reload(); await page.getByRole("heading", { level: 2, name: "Verwechslungen erkannt" }).waitFor();
-check("Verwechslung ب/ت erkannt und angeboten", (await page.textContent("main")).includes("hast du 3-mal verwechselt"));
-await page.getByRole("button", { name: "Gezielt vergleichen und üben" }).click();
-check("Vergleich zeigt Punktunterschiede", /1 Punkt unten/.test(await page.textContent("main")) && /2 Punkte oben/.test(await page.textContent("main")));
-await shot("J-vergleich");
-await page.getByRole("button", { name: "Neue Beispiele üben" }).click();
-await runTasks();
-await page.getByText("Nachtest").first().waitFor();
-await runTasks();
-await page.getByText(/Verwechslung behoben|Noch nicht sicher/).waitFor();
-check("Nachtest bestanden → Verwechslung als behoben markiert", (await page.textContent("main")).includes("Verwechslung behoben"));
-await shot("K-behoben");
-await page.getByRole("button", { name: "Fertig" }).click();
-check("Verwechslung verschwindet nach Behebung", (await page.getByRole("heading", { name: "Verwechslungen erkannt" }).count()) === 0);
+await page.evaluate(() => { const k = "qaidah.lektion.v3"; const s = JSON.parse(localStorage.getItem(k)); s.confusions = { "letter:ba~letter:ta": { a: "letter:ba", b: "letter:ta", count: 3, resolved: false, lastAt: Date.now() } }; localStorage.setItem(k, JSON.stringify(s)); });
+await page.reload(); await page.getByRole("heading", { name: "Das verwechselst du oft" }).waitFor();
+await page.getByRole("button", { name: "Gezielt vergleichen" }).click();
+check("Vergleich zeigt beide Buchstaben mit Punkten", /1 unten/.test(await page.locator(".lp-main").innerText()) && /2 oben/.test(await page.locator(".lp-main").innerText()));
+await shot("D-vergleich");
+await page.locator(".lp-foot .btn-big").click();
+await playLesson({ label: "drill" }).catch(() => {});
+await page.waitForTimeout(200);
+check("Nach bestandenem Nachtest verschwindet die Verwechslung", (await page.getByRole("heading", { name: "Das verwechselst du oft" }).count()) === 0);
 
-/* ===== Merkhilfe wird abgebaut ===== */
-await page.evaluate(() => {
-  const k = "qaidah.lektion.v2"; const s = JSON.parse(localStorage.getItem(k));
-  s.log = s.log.filter((e) => !(e.itemId === "letter:ba" && e.competence === "visual"));
-  s.phaseDone["1.2"] = true; s.steps["1.2"] = 1; s.unit = 1;
-  localStorage.setItem(k, JSON.stringify(s));
-});
-await go("/lektion"); await page.locator(".units").waitFor();
-await openPhase(2);
-await page.locator(".stepper").waitFor();
-const stage1 = await page.locator(".card", { hasText: "Bā" }).first().textContent();
-check("Stufe 1: Bild und Merkhilfe sichtbar", stage1.includes("Boot") && stage1.includes("Stufe 1"), stage1);
-await page.evaluate(() => {
-  const k = "qaidah.lektion.v2"; const s = JSON.parse(localStorage.getItem(k));
-  for (let i = 0; i < 6; i++) s.log.push({ key: "letter:ba|visual", itemId: "letter:ba", competence: "visual", ts: Date.now() + i, grade: 2, correct: true, unit: 1, phase: 5, stability: 1 });
-  localStorage.setItem(k, JSON.stringify(s));
-});
-await go("/lektion"); await page.locator(".units").waitFor(); await openPhase(2);
-const stage4 = await page.locator(".card", { hasText: "Bā" }).first().textContent();
-check("Stufe 4: keine Merkhilfe mehr", !stage4.includes("Boot") && stage4.includes("Stufe 4"), stage4);
+/* ===== Smartphone-Größen ===== */
+for (const [w, h, name] of [[360, 640, "klein"], [430, 932, "groß"]]) {
+  const c = await mkCtx(w, h); const pg = await c.newPage();
+  await pg.goto(url("/")); if (hash) await pg.reload(); await pg.waitForSelector(".path");
+  check(`${name} (${w}×${h}): kein horizontales Scrollen im Pfad`, !(await pg.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)));
+  await pg.locator(".node[data-state=open], .node[data-state=current]").first().click().catch(() => {});
+  await pg.waitForTimeout(150);
+  if (await pg.locator(".lp").count()) {
+    const b = await pg.locator(".lp-foot .btn-big").boundingBox();
+    check(`${name}: Hauptbutton im sichtbaren Bereich`, !!b && b.y + b.height <= h);
+    await pg.screenshot({ path: `${out}/E-${name}.png` });
+  }
+  await c.close();
+}
 
 /* ===== Tastatur ===== */
-await go("/ueben");
+await go("/");
 await page.keyboard.press("Tab");
-const focused = await page.evaluate(() => { const e = document.activeElement; return e ? getComputedStyle(e).outlineStyle : "none"; });
-check("Tastaturfokus sichtbar", focused !== "none");
-
-/* ===== Desktop ===== */
-const d = await browser.newContext({ viewport: { width: 1280, height: 900 } });
-const dp = await d.newPage();
-await dp.goto(url("/lektion")); await dp.getByRole("heading", { level: 1 }).first().waitFor();
-await dp.screenshot({ path: `${out}/Z-desktop.png`, fullPage: true });
+check("Tastaturfokus sichtbar", (await page.evaluate(() => getComputedStyle(document.activeElement).outlineStyle)) !== "none");
 
 check("Keine Konsolenfehler", errors.length === 0, errors.slice(0, 3).join(" | "));
 await browser.close();

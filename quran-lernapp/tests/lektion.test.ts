@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 import { ALIF, ITEMS, L1_LETTER_IDS, MARK, SYLLABLES, WORDS, letterCh } from "@/lektion/content/lektion1";
 import { LETTER_BY_ID } from "@/lektion/content/letters";
 import { AUDIO_MANIFEST, audioIdForItem, hasAudio } from "@/lektion/audio/manifest";
-import { buildSet, checkTyped, drillTasks, extraTasks, gradeFor, interleaveTasks, makeTask, normalizeTyped, reviewTaskFor, variantCount, type Task, type TaskResult } from "@/lektion/domain/lektion/tasks";
+import { buildSet, checkTyped, drillSets, drillTasks, extraTasks, gradeFor, interleaveTasks, makeTask, normalizeTyped, reviewTaskFor, variantCount, type Task, type TaskResult } from "@/lektion/domain/lektion/tasks";
 import { existsSync } from "node:fs";
 import path from "node:path";
 
 const seeded = (seed = 7) => () => ((seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296);
-const ARABIC_ALLOWED = new Set([..."ابتث", ...Object.values(MARK), "◌", "ي", "ن"]);
+const ARABIC_ALLOWED = new Set([..."ابتث", ...Object.values(MARK), "\u0640", "ي", "ن"]);
 const TASHKEEL = /[ً-ٟ]/;
 
 describe("Inhalt: Orthografie und Fachlogik", () => {
@@ -137,6 +137,13 @@ describe("Aufgaben", () => {
     expect(a.competence).toBe("listen");
     expect(reviewTaskFor("syl:ba-long", "listen", 0)).toBeNull();
     expect(reviewTaskFor("syl:ba-fatha", "sound", 0, seeded(1))!.id).not.toBe(reviewTaskFor("syl:ba-fatha", "sound", 1, seeded(1))!.id);
+  });
+  it("Vergleichsübung: Übung und Nachtest sind disjunkt und nicht leer", () => {
+    for (let k = 1; k < 20; k++) {
+      const { practice, retest } = drillSets("letter:ba", "letter:ta", seeded(k));
+      expect(practice.length).toBe(4); expect(retest.length).toBe(4);
+      expect(retest.some((t) => practice.some((p) => p.id === t.id))).toBe(false);
+    }
   });
   it("Vergleichsübung und Zusatzübung: andere Varianten, nur beteiligte Items", () => {
     const d = drillTasks("letter:ba", "letter:ta", 6, seeded(2));

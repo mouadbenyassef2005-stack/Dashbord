@@ -21,8 +21,8 @@ export const ONSET: Record<ConsonantId, string> = { ba: "b", ta: "t", tha: "th" 
 export const VOWEL_LATIN: Record<VowelId, string> = { fatha: "a", kasra: "i", damma: "u" };
 export const MARK = Object.fromEntries(VOWELS.map((v) => [v.id, v.mark])) as Record<VowelId, string>;
 export const VOWEL_NAME = Object.fromEntries(VOWELS.map((v) => [v.id, v.name])) as Record<VowelId, string>;
-/** Gepunkteter Kreis: Platzhalter, um ein Vokalzeichen allein darzustellen. */
-export const DOTTED = "◌";
+/** Träger für ein einzeln gezeigtes Vokalzeichen: Tatweel (U+0640), eine neutrale Linie. Der gepunktete Kreis fehlt in den Arabisch-Schriften und wird ersetzt. */
+export const DOTTED = "\u0640";
 export const ALIF = "ا";
 
 export const letterName = (id: string) => LETTER_BY_ID.get(id)!.name;

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { AREAS, COMPETENCES, levelOf, mnemonicStage, srsKey, summarize, type LogEntry } from "@/lektion/domain/lektion/competence";
 import { DAY } from "@/lektion/domain/scheduler";
 import {
-  UNIT_COUNT, activeConfusions, curvePoints, daysToNextDue, dueEntries, initialLesson, lessonReducer, parseLesson, simNow,
+  activeConfusions, curvePoints, daysToNextDue, dueEntries, initialLesson, lessonReducer, parseLesson, simNow,
 } from "@/lektion/domain/lektion/state";
 import type { TaskResult } from "@/lektion/domain/lektion/tasks";
 
@@ -10,20 +10,20 @@ const T0 = Math.floor(1_700_000_000_000 / DAY) * DAY; // Tagesgrenze, damit „a
 const res = (itemId: string, competence: TaskResult["competence"], grade: 0 | 1 | 2 | 3, confusedWith?: string): TaskResult => ({
   taskId: `${itemId}#0`, itemId, competence, type: "choice", correctness: grade === 0 ? "wrong" : "right", grade, hintUsed: false, answer: "", confusedWith,
 });
-const entry = (over: Partial<LogEntry>): LogEntry => ({ key: "letter:ba|visual", itemId: "letter:ba", competence: "visual", ts: T0, grade: 2, correct: true, unit: 1, phase: 5, stability: 1, ...over });
+const entry = (over: Partial<LogEntry>): LogEntry => ({ key: "letter:ba|visual", itemId: "letter:ba", competence: "visual", ts: T0, grade: 2, correct: true, src: "t", stability: 1, ...over });
 
 describe("Kompetenzen getrennt geplant", () => {
   it("Erfolg beim Erkennen verändert den Plan des Hörens nicht", () => {
     let s = initialLesson(T0);
-    s = lessonReducer(s, { t: "results", unit: 1, phase: 5, now: T0, results: [res("syl:ba-fatha", "listen", 0)] });
+    s = lessonReducer(s, { t: "results", src: "t", now: T0, results: [res("syl:ba-fatha", "listen", 0)] });
     const listenBefore = s.srs[srsKey("syl:ba-fatha", "listen")];
-    s = lessonReducer(s, { t: "results", unit: 1, phase: 5, now: T0 + DAY, results: [res("syl:ba-fatha", "syllable", 3), res("syl:ba-fatha", "visual", 3)] });
+    s = lessonReducer(s, { t: "results", src: "t", now: T0 + DAY, results: [res("syl:ba-fatha", "syllable", 3), res("syl:ba-fatha", "visual", 3)] });
     expect(s.srs[srsKey("syl:ba-fatha", "listen")]).toEqual(listenBefore);
     expect(Object.keys(s.srs).sort()).toEqual(["syl:ba-fatha|listen", "syl:ba-fatha|syllable", "syl:ba-fatha|visual"]);
   });
   it("Fehler verkürzen das Intervall gegenüber Erfolg und stehen bei gleicher Schätzung weiter vorn", () => {
     let s = initialLesson(T0);
-    s = lessonReducer(s, { t: "results", unit: 1, phase: 5, now: T0, results: [res("letter:ba", "visual", 2), res("letter:ta", "visual", 0)] });
+    s = lessonReducer(s, { t: "results", src: "t", now: T0, results: [res("letter:ba", "visual", 2), res("letter:ta", "visual", 0)] });
     expect(s.srs["letter:ta|visual"].dueAt).toBeLessThan(s.srs["letter:ba|visual"].dueAt);
     const due = dueEntries(s.srs, T0 + 30 * DAY);
     expect(due[0].key).toBe("letter:ta|visual");
@@ -78,39 +78,34 @@ describe("Merkhilfen werden abgebaut", () => {
 describe("Adaptivität: Verwechslungen", () => {
   it("wiederholte Verwechslung wird aktiv, einmalige nicht; Auflösung nur durch resolve", () => {
     let s = initialLesson(T0);
-    s = lessonReducer(s, { t: "results", unit: 1, phase: 5, now: T0, results: [res("letter:ba", "visual", 0, "letter:ta")] });
+    s = lessonReducer(s, { t: "results", src: "t", now: T0, results: [res("letter:ba", "visual", 0, "letter:ta")] });
     expect(activeConfusions(s)).toHaveLength(0);
-    s = lessonReducer(s, { t: "results", unit: 1, phase: 5, now: T0 + 1, results: [res("letter:ta", "visual", 0, "letter:ba")] });
+    s = lessonReducer(s, { t: "results", src: "t", now: T0 + 1, results: [res("letter:ta", "visual", 0, "letter:ba")] });
     const act = activeConfusions(s);
     expect(act).toHaveLength(1);
     expect([act[0].a, act[0].b].sort()).toEqual(["letter:ba", "letter:ta"]);
     expect(act[0].count).toBe(2);
     s = lessonReducer(s, { t: "resolve", a: "letter:ta", b: "letter:ba" });
     expect(activeConfusions(s)).toHaveLength(0);
-    s = lessonReducer(s, { t: "results", unit: 1, phase: 5, now: T0 + 2, results: [res("letter:ba", "visual", 0, "letter:ta")] });
+    s = lessonReducer(s, { t: "results", src: "t", now: T0 + 2, results: [res("letter:ba", "visual", 0, "letter:ta")] });
     expect(activeConfusions(s)).toHaveLength(0); // nach Lösung beginnt die Zählung neu
   });
   it("„Weiß ich nicht“ und richtige Antworten zählen nicht als Verwechslung", () => {
     let s = initialLesson(T0);
-    s = lessonReducer(s, { t: "results", unit: 1, phase: 5, now: T0, results: [res("letter:ba", "visual", 2, "letter:ta"), res("letter:ba", "visual", 0)] });
+    s = lessonReducer(s, { t: "results", src: "t", now: T0, results: [res("letter:ba", "visual", 2, "letter:ta"), res("letter:ba", "visual", 0)] });
     expect(Object.keys(s.confusions)).toHaveLength(0);
   });
 });
 
-describe("Entscheidung statt erzwungener Linearität", () => {
-  it("Einheit 2 ist erst nach einer Entscheidung freigeschaltet; „weiter üben“ schaltet nicht frei", () => {
+describe("Lektions-Fortschritt", () => {
+  it("Lektion gilt als geschafft, mit Zahl der Treffer beim ersten Versuch; Wiederholung zählt Durchläufe", () => {
     let s = initialLesson(T0);
-    expect(s.unit).toBe(1);
-    s = lessonReducer(s, { t: "decide", unit: 1, choice: "more", now: T0 });
-    expect(s.unit).toBe(1);
-    s = lessonReducer(s, { t: "decide", unit: 1, choice: "continue", now: T0 });
-    expect(s.unit).toBe(2);
-    for (let u = 2; u <= 6; u++) s = lessonReducer(s, { t: "decide", unit: u, choice: "continue", now: T0 });
-    expect(s.unit).toBe(UNIT_COUNT);
+    s = lessonReducer(s, { t: "lessonDone", id: "b-alif", first: 5, total: 6, now: T0 });
+    s = lessonReducer(s, { t: "lessonDone", id: "b-alif", first: 6, total: 6, now: T0 + 1 });
+    expect(s.lessons["b-alif"]).toMatchObject({ done: true, first: 6, total: 6, runs: 2 });
   });
-  it("Phasen-Aktivität ist getrennt von Können: phaseDone ändert keinen Kompetenzstand", () => {
-    let s = initialLesson(T0);
-    s = lessonReducer(s, { t: "phaseDone", unit: 1, phase: 5 });
+  it("Abschluss einer Lektion ändert keinen Kompetenzstand (Aktivität ≠ Können)", () => {
+    const s = lessonReducer(initialLesson(T0), { t: "lessonDone", id: "b-ba", first: 1, total: 1, now: T0 });
     expect(summarize(s.log, s.srs).every((x) => x.total === 0)).toBe(true);
   });
 });
@@ -118,7 +113,7 @@ describe("Entscheidung statt erzwungener Linearität", () => {
 describe("Simulation getrennt vom echten Plan", () => {
   it("Simulierte Wiederholungen verändern den echten Plan nicht; Zeitsprung macht fällig", () => {
     let s = initialLesson(T0);
-    s = lessonReducer(s, { t: "results", unit: 1, phase: 6, now: T0, results: [res("letter:ba", "visual", 2), res("word:bab", "word", 3)] });
+    s = lessonReducer(s, { t: "results", src: "t", now: T0, results: [res("letter:ba", "visual", 2), res("word:bab", "word", 3)] });
     const real = JSON.stringify(s.srs);
     s = lessonReducer(s, { t: "simStart", now: T0 });
     expect(dueEntries(s.sim!.srs, simNow(s.sim!))).toHaveLength(0);
@@ -127,15 +122,15 @@ describe("Simulation getrennt vom echten Plan", () => {
     const due = dueEntries(s.sim!.srs, simNow(s.sim!));
     expect(due.length).toBeGreaterThan(0);
     const before = s.sim!.srs[due[0].key];
-    s = lessonReducer(s, { t: "simResults", unit: 1, results: [res(due[0].key.split("|")[0], due[0].key.split("|")[1] as "visual", 2)] });
+    s = lessonReducer(s, { t: "simResults", results: [res(due[0].key.split("|")[0], due[0].key.split("|")[1] as "visual", 2)] });
     expect(s.sim!.srs[due[0].key].stability).toBeGreaterThan(before.stability);
     expect(JSON.stringify(s.srs)).toBe(real);
     expect(s.sim!.sessions).toHaveLength(1);
   });
   it("Kurve: springt bei Wiederholung auf 100 % und fällt vorher monoton", () => {
     let s = initialLesson(T0);
-    s = lessonReducer(s, { t: "results", unit: 1, phase: 6, now: T0, results: [res("letter:tha", "visual", 2)] });
-    s = lessonReducer(s, { t: "results", unit: 1, phase: 7, now: T0 + 2 * DAY, results: [res("letter:tha", "visual", 2)] });
+    s = lessonReducer(s, { t: "results", src: "t", now: T0, results: [res("letter:tha", "visual", 2)] });
+    s = lessonReducer(s, { t: "results", src: "t", now: T0 + 2 * DAY, results: [res("letter:tha", "visual", 2)] });
     const pts = curvePoints(s.log, "letter:tha|visual", T0, T0 + 10 * DAY, 10);
     expect(pts.find((p) => Math.abs(p.x - 2) < 1e-9)!.r).toBeCloseTo(1, 5);
     for (let i = 1; i < 2; i++) expect(pts[i].r).toBeLessThanOrEqual(pts[i - 1].r + 1e-9);
@@ -145,21 +140,21 @@ describe("Simulation getrennt vom echten Plan", () => {
 describe("Speicherung", () => {
   it("Roundtrip, kaputte Daten und alte Version fallen auf Standard, Teilschäden werden verworfen", () => {
     let s = initialLesson(T0);
-    s = lessonReducer(s, { t: "phaseDone", unit: 1, phase: 1 });
-    s = lessonReducer(s, { t: "hyp", id: "u1-h1", answer: { choice: 0, confidence: "sure" } });
-    s = lessonReducer(s, { t: "results", unit: 1, phase: 5, now: T0, results: [res("letter:ba", "visual", 2, undefined)] });
+    s = lessonReducer(s, { t: "lessonDone", id: "b-alif", first: 3, total: 4, now: T0 });
+    s = lessonReducer(s, { t: "hyp", id: "h-dots", answer: { choice: 0 } });
+    s = lessonReducer(s, { t: "results", src: "t", now: T0, results: [res("letter:ba", "visual", 2, undefined)] });
     s = lessonReducer(s, { t: "simStart", now: T0 });
     expect(parseLesson(JSON.stringify(s), T0)).toEqual(s);
     expect(parseLesson("{kaputt", T0)).toEqual(initialLesson(T0));
     expect(parseLesson(null, T0)).toEqual(initialLesson(T0));
-    expect(parseLesson(JSON.stringify({ v: 1 }), T0)).toEqual(initialLesson(T0));
-    const dmg = parseLesson(JSON.stringify({ ...s, srs: { ...s.srs, "x|y": { stability: -1 } }, log: [...s.log, { nonsense: 1 }], unit: 99 }), T0);
+    expect(parseLesson(JSON.stringify({ v: 2 }), T0)).toEqual(initialLesson(T0));
+    const dmg = parseLesson(JSON.stringify({ ...s, srs: { ...s.srs, "x|y": { stability: -1 } }, log: [...s.log, { nonsense: 1 }] , lessons: { x: { done: false } , y: { done: true, first: 1, total: 2, at: 1, runs: 1 } } }), T0);
     expect(Object.keys(dmg.srs)).toEqual(["letter:ba|visual"]);
     expect(dmg.log).toHaveLength(1);
-    expect(dmg.unit).toBe(UNIT_COUNT);
+    expect(Object.keys(dmg.lessons)).toEqual(["y"]);
   });
   it("Reset", () => {
-    const s = lessonReducer(lessonReducer(initialLesson(T0), { t: "phaseDone", unit: 2, phase: 3 }), { t: "reset", now: T0 + 5 });
-    expect(s.phaseDone).toEqual({}); expect(s.startedAt).toBe(T0 + 5);
+    const s = lessonReducer(lessonReducer(initialLesson(T0), { t: "lessonDone", id: "t-fatha", first: 1, total: 1, now: T0 }), { t: "reset", now: T0 + 5 });
+    expect(s.lessons).toEqual({}); expect(s.startedAt).toBe(T0 + 5);
   });
 });

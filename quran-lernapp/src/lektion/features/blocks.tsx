@@ -28,7 +28,8 @@ export function writeResult(o: WriteOutcome): TaskResult {
 }
 
 /** Folge von Schreibaufgaben; jedes gewertete Ergebnis geht in den Wiederholungsplan. */
-export function WriteSeq({ plan, unit, phase, onFinished }: { plan: { letterId: string; mode: "trace" | "free"; note?: string }[]; unit: number; phase: number; onFinished?: () => void }) {
+/** Aufbewahrt für spätere Lektionen (Schreiben ist nicht Teil des ersten Lernpfads). */
+export function WriteSeq({ plan, onFinished }: { plan: { letterId: string; mode: "trace" | "free"; note?: string }[]; onFinished?: () => void }) {
   const { dispatch } = useLesson();
   const [i, setI] = useState(0);
   if (i >= plan.length) return <p className="notice" role="status">Alle {plan.length} Schreibaufgaben erledigt. Die Rückmeldung zeigt Form, Punkte und Richtung, nicht die Schönheit der Handschrift.</p>;
@@ -37,7 +38,7 @@ export function WriteSeq({ plan, unit, phase, onFinished }: { plan: { letterId: 
     <div className="stack">
       <p className="eyebrow">Schreibaufgabe {i + 1} von {plan.length}{plan[i].note ? ` · ${plan[i].note}` : ""}</p>
       <WriteTask key={i} letterId={plan[i].letterId} mode={plan[i].mode}
-        onDone={(o) => { if (o.evaluated) dispatch({ t: "results", unit, phase, results: [writeResult(o)], now: Date.now(), keep: false }); next(); }} onSkip={next} />
+        onDone={(o) => { if (o.evaluated) dispatch({ t: "results", src: "schreiben", results: [writeResult(o)], now: Date.now() }); next(); }} onSkip={next} />
     </div>
   );
 }

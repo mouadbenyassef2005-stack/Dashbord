@@ -1,3 +1,5 @@
+> **Hinweis:** Dieses Dokument beschreibt die Version 2 (Einheiten × 7 Phasen). Die Oberfläche wurde durch den Lernpfad aus kurzen Mini-Lektionen ersetzt, siehe `LERNPFAD-V3.md`. Die Analyse der Befunde und die Domänenlogik gelten weiter.
+
 # Analyse der bestehenden App und Umsetzungsplan
 
 Stand der Analyse: Zustand der App vor dieser Überarbeitung (Lektion 1 als eine lange Folge von sieben Phasen).

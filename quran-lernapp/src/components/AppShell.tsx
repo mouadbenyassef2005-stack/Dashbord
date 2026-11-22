@@ -7,8 +7,7 @@ import { IconBook, IconHome, IconTrain, IconUser } from "./icons";
 import { cx } from "./ui";
 
 const NAV = [
-  { href: "/", label: "Start", icon: IconHome },
-  { href: "/lektion", label: "Lektion", icon: IconBook },
+  { href: "/", label: "Lernpfad", icon: IconHome },
   { href: "/ueben", label: "Üben", icon: IconTrain },
   { href: "/profil", label: "Profil", icon: IconUser },
 ];

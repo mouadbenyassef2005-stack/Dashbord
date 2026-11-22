@@ -1,56 +1,76 @@
 "use client";
-import { IconArrow, IconBook, IconTrain } from "@/components/icons";
-import { ButtonLink, Card } from "@/components/ui";
-import { UNITS } from "@/lektion/content/units";
-import { activeConfusions, dueEntries, PHASE_COUNT, pk } from "@/lektion/domain/lektion/state";
-import { Ar } from "@/lektion/ui/parts";
 import { useState } from "react";
-import { CompetenceBoard } from "./Board";
+import { LESSONS, LESSON_BY_ID, LESSON_KIND_LABEL, STRECKEN, lessonsOf, type Lesson } from "@/lektion/content/path";
+import { Ar } from "@/lektion/ui/parts";
 import { useLesson } from "./LessonContext";
+import { LessonPlayer } from "./play/LessonPlayer";
 
+const GLYPH: Record<string, string> = { "b-alif": "ا", "b-ba": "ب", "b-ta": "ت", "b-tha": "ث", "t-fatha": "ـَ", "t-kasra": "ـِ", "t-damma": "ـُ", "k-ba": "بَ", "k-ta": "تِ", "k-tha": "ثُ" };
+const SYMBOL: Record<string, string> = { entdecken: "?", erklaeren: "!", anwenden: "→", wiederholung: "↻", gezielt: "◎", einfuehrung: "★" };
+
+/** Der Lernpfad: vier Strecken aus kurzen Lektionen. Die nächste Lektion ist hervorgehoben, nichts sonst konkurriert um Aufmerksamkeit. */
 export function Start() {
   const { s } = useLesson();
-  const [now] = useState(() => Date.now());
-  const started = Object.keys(s.phaseDone).length > 0 || Object.keys(s.srs).length > 0;
-  const cur = UNITS.find((u) => u.id === s.unit)!;
-  const phasesDone = Array.from({ length: PHASE_COUNT }, (_, i) => i + 1).filter((p) => s.phaseDone[pk(cur.id, p)]).length;
-  const due = dueEntries(s.srs, now).length;
-  const conf = activeConfusions(s).length;
+  const [open, setOpen] = useState<Lesson | null>(null);
+  const [locked, setLocked] = useState<Lesson | null>(null);
+  const doneOf = (id: string) => !!s.lessons[id]?.done;
+  const currentIdx = LESSONS.findIndex((l) => !doneOf(l.id));
+  const current = currentIdx === -1 ? null : LESSONS[currentIdx];
+  const isOpen = (idx: number) => idx === 0 || doneOf(LESSONS[idx - 1].id);
+  const start = (l: Lesson) => { const idx = LESSONS.indexOf(l); if (isOpen(idx) || doneOf(l.id)) setOpen(l); else setLocked(l); };
+
   return (
-    <div className="space-y-8">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">{started ? "Schön, dass du wieder da bist" : "Willkommen bei Qaidah"}</p>
-        <h1 className="mt-2 text-[2rem] font-semibold leading-tight tracking-[-0.04em] sm:text-[2.6rem]">Arabisch lesen lernen<span className="text-primary">.</span></h1>
-        <p className="mt-2 max-w-xl text-[15px] text-muted">In vier kurzen Einheiten von der ersten Form bis zum ersten Wort. Du kommst erst weiter, wenn es sitzt, und bekommst gezielte Hilfe, wenn nicht.</p>
-      </div>
-      <section className="rounded-[2rem] bg-gradient-to-br from-[#154b41] via-primary-strong to-[#24725d] p-6 text-white shadow-card sm:p-9" aria-labelledby="l1">
-        <div className="grid gap-6 sm:grid-cols-[1fr_auto] sm:items-center">
-          <div className="max-w-xl">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-white/75">Einheit {cur.id} von 4 · ca. {cur.minutes} Minuten</p>
-            <h2 id="l1" className="mt-3 text-3xl font-semibold leading-tight tracking-[-0.03em] sm:text-4xl">{cur.short}</h2>
-            <p className="mt-3 text-[15px] leading-relaxed text-white/85">{cur.goal}</p>
-            <p className="mt-3 text-sm text-white/75">{phasesDone} von {PHASE_COUNT} Phasen dieser Einheit bearbeitet</p>
-            <ButtonLink href="/lektion" className="mt-6 min-h-12 !bg-white !text-primary-strong hover:!bg-[#eff7f0]">{started ? "Weiterlernen" : "Einheit 1 starten"} <IconArrow className="size-5" /></ButtonLink>
+    <div className="qd path">
+      <header className="path-head">
+        <h1>Arabisch lesen</h1>
+        <p className="muted">{current ? <>Nächste Lektion: <b>{current.title}</b></> : "Alle Lektionen dieser ersten Strecke sind geschafft."}</p>
+      </header>
+      {STRECKEN.map((st) => {
+        const ls = lessonsOf(st.id);
+        const nDone = ls.filter((l) => doneOf(l.id)).length;
+        return (
+          <section key={st.id} className="path-sec" aria-labelledby={`st${st.id}`}>
+            <div className="path-banner" data-active={ls.some((l) => l === current)}>
+              <div><p className="lp-eyebrow">Strecke {st.id}</p><h2 id={`st${st.id}`}>{st.title}</h2><p>{st.goal}</p></div>
+              <span className="path-count" aria-label={`${nDone} von ${ls.length} Lektionen geschafft`}>{nDone}/{ls.length}</span>
+            </div>
+            <ol className="path-list">
+              {ls.map((l, i) => {
+                const idx = LESSONS.indexOf(l);
+                const done = doneOf(l.id), cur = l === current, lock = !done && !isOpen(idx);
+                const g = GLYPH[l.id];
+                const rec = s.lessons[l.id];
+                return (
+                  <li key={l.id} className="path-item" data-off={i % 4}>
+                    <button className="node" data-state={done ? "done" : cur ? "current" : lock ? "locked" : "open"} onClick={() => start(l)}
+                      aria-label={`${l.title}, ${l.sub}, etwa ${l.minutes} Minuten, ${done ? "geschafft" : cur ? "als Nächstes" : lock ? "noch gesperrt" : "offen"}`}>
+                      {cur && <span className="node-flag" aria-hidden>Start</span>}
+                      <span className="node-face" aria-hidden>{g ? <Ar size="body">{g}</Ar> : SYMBOL[l.kind]}</span>
+                      {done && <span className="node-check" aria-hidden>✓</span>}
+                      {lock && <span className="node-lock" aria-hidden>🔒</span>}
+                    </button>
+                    <div className="node-label"><b>{l.title}</b><span>{LESSON_KIND_LABEL[l.kind]} · ca. {l.minutes} Min.{done && rec ? ` · ${rec.first}/${rec.total} gleich richtig` : ""}</span></div>
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
+        );
+      })}
+      <p className="muted path-foot">Wörter, lange Vokale und Verbindungen folgen in einer späteren Strecke.</p>
+
+      {open && <LessonPlayer key={open.id} id={open.id} title={open.title} lesson={open} src={open.id} onClose={() => setOpen(null)} />}
+      {locked && (
+        <div className="qd lp-sheet" role="alertdialog" aria-label="Lektion noch gesperrt">
+          <div className="lp-sheet-card">
+            <h3>Noch gesperrt</h3>
+            <p className="muted">Schließe zuerst <b>{LESSON_BY_ID.get(LESSONS[Math.max(0, LESSONS.indexOf(locked) - 1)].id)!.title}</b> ab. So baut alles aufeinander auf.</p>
+            <button className="btn-big" onClick={() => { if (current) setOpen(current); setLocked(null); }}>Zur nächsten Lektion</button>
+            <button className="btn-big btn-ghost" onClick={() => { setOpen(locked); setLocked(null); }}>Trotzdem öffnen</button>
+            <button className="btn-big btn-ghost" onClick={() => setLocked(null)}>Abbrechen</button>
           </div>
-          <div className="flex gap-3 text-5xl text-white/90" aria-hidden>{["ا", "ب", "ت", "ث"].map((c) => <Ar key={c} size="teach">{c}</Ar>)}</div>
         </div>
-      </section>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card>
-          <span className="grid size-11 place-items-center rounded-2xl bg-primary-soft text-primary"><IconBook className="size-5" /></span>
-          <p className="mt-5 text-xs font-bold uppercase tracking-[0.16em] text-primary">Aufbau</p>
-          <p className="mt-1 text-lg font-semibold tracking-tight">Vier Einheiten, jeweils sieben Phasen</p>
-          <ol className="mt-2 list-decimal pl-5 text-sm leading-relaxed text-muted">{UNITS.map((u) => <li key={u.id}>{u.short}</li>)}</ol>
-        </Card>
-        <Card>
-          <span className="grid size-11 place-items-center rounded-2xl bg-gold-soft text-gold"><IconTrain className="size-5" /></span>
-          <p className="mt-5 text-xs font-bold uppercase tracking-[0.16em] text-gold">Üben</p>
-          <p className="mt-1 text-lg font-semibold tracking-tight">{due > 0 ? `${due} Wiederholungen fällig` : "Wiederholen nach Plan"}</p>
-          <p className="mt-1 text-sm leading-relaxed text-muted">{conf > 0 ? `${conf} Verwechslung${conf > 1 ? "en" : ""} erkannt: gezielte Vergleichsübung wartet.` : "Fällige Kompetenzen, Vergleichsübungen und freie Übung."}</p>
-          <ButtonLink href="/ueben" variant="soft" className="mt-5">Zu „Üben“ <IconArrow className="size-4" /></ButtonLink>
-        </Card>
-      </div>
-      {Object.keys(s.log).length > 0 && <div className="qd"><CompetenceBoard /></div>}
+      )}
     </div>
   );
 }

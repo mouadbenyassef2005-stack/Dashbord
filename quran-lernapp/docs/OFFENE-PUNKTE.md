@@ -25,3 +25,6 @@
 - Buchstabenlaut wird als „ba/ta/tha“ gespielt (Konsonant mit kurzem a), weil Konsonanten nicht isoliert sprechbar sind.
 - Wörter in Pausalform, mit Hinweis. تَاب bleibt trotz Erklärungsbedarf, solange keine muttersprachliche Prüfung vorliegt.
 - „Trotzdem weiter“ ist erlaubt, damit niemand eingesperrt wird.
+
+## Zusätzlich seit dem mobilen Lernpfad (V3)
+Siehe `LERNPFAD-V3.md`, Abschnitt 8 (u. a. Ablenker aus nicht gelehrten Buchstaben, Träger-Linie in anderen Browsern, Buchstabenlaut als Silbe, fehlende Schreib-Strecke).

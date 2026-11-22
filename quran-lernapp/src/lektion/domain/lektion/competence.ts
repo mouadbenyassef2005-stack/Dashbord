@@ -37,8 +37,8 @@ export interface LogEntry {
   ts: number;
   grade: number;
   correct: boolean;
-  unit: number;
-  phase: number;
+  /** Herkunft: Lektions-ID, „ueben“ oder „drill“ */
+  src: string;
   /** Stabilität (Tage) laut Modell nach dieser Wiederholung */
   stability: number;
   ms?: number;

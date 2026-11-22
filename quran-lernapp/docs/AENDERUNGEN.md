@@ -1,3 +1,5 @@
+> **Hinweis:** Teile (Einheiten × 7 Phasen, Elaborationstexte, Zeitreise-Oberfläche) sind durch `LERNPFAD-V3.md` überholt. Die wissenschaftliche Begründung der Kompetenz-Trennung, des Audios, der Phonetik und der Verwechslungs-Übung gilt weiter.
+
 # Änderungsdokumentation mit wissenschaftlicher und UX-Begründung
 
 Struktur je Änderung: **1 Problem · 2 Änderung · 3 Grundlage · 4 Erwarteter Nutzen · 5 Überprüfung der Wirksamkeit**.

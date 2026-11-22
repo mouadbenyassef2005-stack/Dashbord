@@ -1,69 +1,57 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ITEMS, ITEM_BY_ID } from "@/lektion/content/lektion1";
-import { COMPETENCE_LABEL, parseSrsKey, type Competence } from "@/lektion/domain/lektion/competence";
+import type { Slide } from "@/lektion/content/path";
+import { COMPETENCE_LABEL, parseSrsKey } from "@/lektion/domain/lektion/competence";
 import { dueEntries } from "@/lektion/domain/lektion/state";
-import { interleaveTasks, makeTask, reviewTaskFor, variantCount, type Task, type TaskResult } from "@/lektion/domain/lektion/tasks";
+import { interleaveTasks, makeTask, reviewTaskFor, variantCount, type Task } from "@/lektion/domain/lektion/tasks";
 import { RichText } from "@/lektion/ui/parts";
 import { ConfusionOffer } from "./Remedial";
 import { useLesson } from "./LessonContext";
-import { ResultBreakdown, pct, share } from "./Summary";
-import { TaskRunner } from "./TaskRunner";
+import { LessonPlayer } from "./play/LessonPlayer";
 
 const CAP = 10;
+/** Im ersten Lernpfad gibt es nur Buchstaben, Tashkeel und Silben. Alles andere bleibt für später. */
+const IN_PATH = (id: string) => /^(letter|vowel):/.test(id) || /^syl:\w+-(fatha|kasra|damma)$/.test(id);
 
-function Session({ tasks, mode, onAgain }: { tasks: Task[]; mode: "due" | "free"; onAgain(): void }) {
-  const { dispatch } = useLesson();
-  const [res, setRes] = useState<TaskResult[] | null>(null);
-  if (res)
-    return (
-      <div className="stack-lg fade">
-        <h1>Geschafft</h1>
-        <div className="kpis"><div className="kpi"><b>{res.filter((r) => r.correctness === "right").length} von {res.length}</b><small>im ersten Versuch richtig ({pct(share(res))})</small></div></div>
-        <p className="muted">{mode === "due" ? "Die Ergebnisse sind in deinen Wiederholungsplan eingegangen: richtig verlängert das Intervall dieser Kompetenz, falsch verkürzt es." : "Freies Üben verändert deinen Wiederholungsplan nicht."}</p>
-        <ResultBreakdown results={res} />
-        <ConfusionOffer />
-        <div className="row"><button className="btn btn-primary" onClick={onAgain}>Zurück</button><Link className="btn btn-secondary" href="/">Zur Startseite</Link></div>
-      </div>
-    );
-  return <TaskRunner tasks={tasks} feedback="immediate" hints label="Aufgabe" onDone={(rs) => { if (mode === "due") dispatch({ t: "results", unit: 0, phase: 7, results: rs, now: Date.now(), keep: false }); setRes(rs); }} />;
-}
-
-/** Üben: echte Wiederholungen nach Plan (echte Zeit), erkannte Verwechslungen und freie gemischte Übung. */
+/** Üben: echte Wiederholungen nach Plan (echte Zeit), erkannte Verwechslungen und freie Übung. */
 export function Practice() {
   const { s } = useLesson();
-  const [run, setRun] = useState<{ tasks: Task[]; mode: "due" | "free" } | null>(null);
+  const [run, setRun] = useState<{ tasks: Task[]; mode: "due" | "free"; n: number } | null>(null);
   const [now] = useState(() => Date.now());
-  const due = dueEntries(s.srs, now);
-  const byComp = due.reduce<Record<string, number>>((a, d) => { const c = parseSrsKey(d.key).competence; a[c] = (a[c] ?? 0) + 1; return a; }, {});
-  const known = Object.keys(s.srs).length;
-  if (run) return <Session key={JSON.stringify(run.tasks.map((t) => t.id))} tasks={run.tasks} mode={run.mode} onAgain={() => setRun(null)} />;
-  if (known === 0)
+  const seq = useRef(0);
+  const due = dueEntries(s.srs, now).filter((d) => IN_PATH(parseSrsKey(d.key).itemId));
+  const known = Object.keys(s.srs).filter((k) => IN_PATH(parseSrsKey(k).itemId));
+  if (run) {
+    const slides: Slide[] = run.tasks.map((task) => ({ k: "taskobj", task }));
+    return <LessonPlayer key={run.n} id="ueben" title="Üben" slides={slides} src={run.mode === "due" ? "ueben" : "frei"} onClose={() => setRun(null)} finishLabel="Fertig" />;
+  }
+  if (known.length === 0)
     return (
-      <div className="stack-lg fade"><header className="stack"><p className="eyebrow">Üben</p><h1>Wiederholen und üben</h1></header>
-        <p className="notice" role="status">Hier erscheinen Wiederholungen, sobald du in der Lektion Aufgaben beantwortet hast.</p><Link className="btn btn-primary" href="/lektion">Zur Lektion</Link></div>
+      <div className="qd stack-lg fade"><header className="stack"><h1>Üben</h1></header>
+        <p className="notice" role="status">Hier erscheinen Wiederholungen, sobald du eine Lektion geschafft hast.</p><Link className="btn btn-primary" href="/">Zum Lernpfad</Link></div>
     );
   const startDue = () => {
     const picked = due.slice(0, CAP).map((d) => { const { itemId, competence } = parseSrsKey(d.key); return reviewTaskFor(itemId, competence, s.srs[d.key].reps); }).filter((t): t is Task => !!t);
-    setRun({ tasks: interleaveTasks(picked), mode: "due" });
+    setRun({ tasks: interleaveTasks(picked), mode: "due", n: ++seq.current });
   };
   const startFree = () => {
-    const pool = ITEMS.filter((i) => Object.keys(s.srs).some((k) => parseSrsKey(k).itemId === i.id));
-    const picked = [...pool].sort(() => Math.random() - 0.5).slice(0, 12);
-    setRun({ tasks: interleaveTasks(picked.map((i) => makeTask(i.id, Math.floor(Math.random() * variantCount(i.id))))), mode: "free" });
+    const ids = new Set(known.map((k) => parseSrsKey(k).itemId));
+    const pool = ITEMS.filter((i) => ids.has(i.id) && IN_PATH(i.id));
+    const picked = [...pool].sort(() => Math.random() - 0.5).slice(0, 10);
+    setRun({ tasks: interleaveTasks(picked.map((i) => makeTask(i.id, Math.floor(Math.random() * variantCount(i.id))))), mode: "free", n: ++seq.current });
   };
   return (
-    <div className="stack-lg fade">
-      <header className="stack"><p className="eyebrow">Üben</p><h1>Wiederholen und üben</h1></header>
+    <div className="qd stack-lg fade">
+      <header className="stack"><h1>Üben</h1></header>
       <section className="panel stack" aria-labelledby="due"><h2 id="due">{due.length > 0 ? `${due.length} Wiederholungen fällig` : "Heute ist nichts fällig"}</h2>
         {due.length > 0 ? (<>
-          <p className="muted">Nach deinem Plan, schwächste zuerst. {Object.entries(byComp).map(([c, n]) => `${COMPETENCE_LABEL[c as Competence]}: ${n}`).join(" · ")}. Pro Sitzung höchstens {CAP}.</p>
-          <ul className="goals">{due.slice(0, 5).map((d) => { const { itemId, competence } = parseSrsKey(d.key); return <li key={d.key}><RichText text={ITEM_BY_ID.get(itemId)?.label ?? itemId} /> <span className="muted">· {COMPETENCE_LABEL[competence]}</span></li>; })}</ul>
-          <button className="btn btn-primary" onClick={startDue}>Wiederholung starten</button></>) : <p className="muted">Der Plan wiederholt eine Kompetenz erst kurz vor dem Vergessen. Komm später wieder, oder übe frei.</p>}
+          <ul className="goals">{due.slice(0, 4).map((d) => { const { itemId, competence } = parseSrsKey(d.key); return <li key={d.key}><RichText text={ITEM_BY_ID.get(itemId)?.label ?? itemId} /> <span className="muted">· {COMPETENCE_LABEL[competence]}</span></li>; })}</ul>
+          <button className="btn btn-primary" onClick={startDue}>Wiederholung starten</button></>) : <p className="muted">Eine Kompetenz wird erst kurz vor dem Vergessen wiederholt. Komm später wieder oder übe frei.</p>}
       </section>
       <ConfusionOffer />
-      <section className="panel stack" aria-labelledby="free"><h2 id="free">Freie Übung</h2><p className="muted">12 gemischte Aufgaben aus allem, was du schon geübt hast. Verändert den Plan nicht.</p><div><button className="btn btn-secondary" onClick={startFree}>Freie Übung starten</button></div></section>
+      <section className="panel stack" aria-labelledby="free"><h2 id="free">Freie Übung</h2><p className="muted">10 gemischte Aufgaben. Verändert den Wiederholungsplan nicht.</p><div><button className="btn btn-secondary" onClick={startFree}>Freie Übung starten</button></div></section>
     </div>
   );
 }

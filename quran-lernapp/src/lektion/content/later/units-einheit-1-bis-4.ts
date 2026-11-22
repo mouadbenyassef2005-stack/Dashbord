@@ -1,6 +1,6 @@
 import type { Competence } from "@/lektion/domain/lektion/competence";
 import type { Spec } from "@/lektion/domain/lektion/tasks";
-import { UNKNOWN_OPTION } from "./lektion1";
+import { UNKNOWN_OPTION } from "../lektion1";
 
 /**
  * Die vier Lerneinheiten von Lektion 1. Jede Einheit durchläuft die sieben Phasen in kompakter Form:
