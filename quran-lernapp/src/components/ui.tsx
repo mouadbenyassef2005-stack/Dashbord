@@ -3,13 +3,13 @@ import type { ComponentProps, ReactNode } from "react";
 
 export const cx = (...a: (string | false | null | undefined)[]) => a.filter(Boolean).join(" ");
 
-const btn = "inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-[15px] font-medium transition active:scale-[0.98] disabled:opacity-45 disabled:pointer-events-none select-none";
+const btn = "inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-5 py-3 text-[15px] font-semibold transition duration-200 active:scale-[0.98] disabled:opacity-45 disabled:pointer-events-none select-none";
 const variants = {
-  primary: "bg-primary text-white hover:bg-primary-strong shadow-sm",
-  soft: "bg-primary-soft text-primary-strong hover:bg-[#d6e6e2]",
+  primary: "bg-primary text-white shadow-sm shadow-primary/15 hover:bg-primary-strong",
+  soft: "bg-primary-soft text-primary-strong hover:bg-primary-soft/80",
   ghost: "text-ink/80 hover:bg-ink/5",
-  outline: "border border-line bg-surface text-ink hover:border-primary/40",
-  danger: "bg-warn-soft text-warn hover:bg-[#f3d9d2]",
+  outline: "border border-line/90 bg-surface text-ink shadow-sm shadow-ink/5 hover:border-primary/30 hover:bg-primary-soft/40",
+  danger: "bg-warn-soft text-warn hover:bg-warn-soft/80",
 };
 export type Variant = keyof typeof variants;
 
@@ -21,7 +21,7 @@ export function ButtonLink({ variant = "primary", className, ...p }: ComponentPr
 }
 
 export function Card({ className, ...p }: ComponentProps<"div">) {
-  return <div {...p} className={cx("rounded-3xl border border-line bg-surface p-5 shadow-card sm:p-6", className)} />;
+  return <div {...p} className={cx("rounded-[1.75rem] border border-line/80 bg-surface p-5 shadow-card transition-shadow sm:p-6", className)} />;
 }
 
 export function ProgressBar({ value, className, label }: { value: number; className?: string; label?: string }) {
@@ -66,10 +66,10 @@ export function DemoBadge({ className }: { className?: string }) {
 
 export function PageHeader({ title, subtitle, right }: { title: string; subtitle?: string; right?: ReactNode }) {
   return (
-    <header className="mb-6 flex items-end justify-between gap-4">
+    <header className="mb-5 flex items-end justify-between gap-4 border-b border-line/70 pb-5 sm:mb-7">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{title}</h1>
-        {subtitle && <p className="mt-1 text-[15px] text-muted">{subtitle}</p>}
+        <h1 className="text-[1.75rem] font-semibold leading-tight tracking-[-0.035em] sm:text-[2rem]">{title}</h1>
+        {subtitle && <p className="mt-1.5 max-w-2xl text-[15px] leading-relaxed text-muted">{subtitle}</p>}
       </div>
       {right}
     </header>

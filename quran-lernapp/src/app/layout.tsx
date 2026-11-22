@@ -1,15 +1,19 @@
 import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/inter";
-import "@fontsource/amiri-quran/arabic-400.css";
+import "@fontsource/noto-naskh-arabic/arabic-400.css";
 import "@fontsource/scheherazade-new/arabic-400.css";
+import "@fontsource/scheherazade-new/arabic-700.css";
 import "./globals.css";
+import "@/lektion/lektion.css";
 import { AppShell } from "@/components/AppShell";
 
+export const instant = false;
+
 export const metadata: Metadata = {
-  title: "Qaidah – Quran lesen lernen",
-  description: "Schritt für Schritt vom ersten Buchstaben zum selbstständigen Quran-Lesen. MVP mit Demo-Sprachfeedback.",
+  title: "Qaidah – Arabisch lesen lernen",
+  description: "Interaktive Lektion für erwachsene Anfänger: Alif, Bā, Tā, Thā und die Kurzvokale, in sieben Lernphasen.",
 };
-export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#f7f4ee" };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#f5f8f5" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

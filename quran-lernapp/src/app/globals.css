@@ -1,71 +1,106 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #f7f4ee;
+  --color-bg: #f5f8f5;
   --color-surface: #ffffff;
-  --color-ink: #1b2a2a;
-  --color-muted: #66726e;
-  --color-line: #e7e1d5;
-  --color-primary: #1f5a52;
-  --color-primary-strong: #174640;
-  --color-primary-soft: #e4efec;
-  --color-gold: #a9803a;
-  --color-gold-soft: #f4ecdb;
-  --color-ok: #3a7a56;
-  --color-ok-soft: #e3f0e8;
+  --color-ink: #18312d;
+  --color-muted: #71817b;
+  --color-line: #e2ebe5;
+  --color-primary: #176b58;
+  --color-primary-strong: #104c40;
+  --color-primary-soft: #e5f2ec;
+  --color-gold: #9a7131;
+  --color-gold-soft: #f5efdf;
+  --color-ok: #347951;
+  --color-ok-soft: #e4f2e9;
   --color-warn: #b5533c;
   --color-warn-soft: #f8e7e2;
   --color-wrong: #d32f2f;
   --color-wrong-soft: #fde8e8;
-  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-arabic: "Amiri Quran", "Scheherazade New", "Noto Naskh Arabic", "Traditional Arabic", serif;
-  --font-arabic-alt: "Scheherazade New", "Amiri Quran", "Noto Naskh Arabic", serif;
-  --shadow-card: 0 1px 2px rgb(27 42 42 / 0.04), 0 8px 24px -12px rgb(27 42 42 / 0.12);
+  --font-ui: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: var(--font-ui);
+  --shadow-card: 0 2px 6px rgb(24 49 45 / 0.035), 0 16px 38px -24px rgb(24 49 45 / 0.2);
 }
 
 html {
   background: var(--color-bg);
+  scroll-behavior: smooth;
 }
 body {
-  background: var(--color-bg);
+  background:
+    radial-gradient(ellipse at 50% -18rem, rgb(220 238 226 / 0.7), transparent 38rem),
+    var(--color-bg);
   color: var(--color-ink);
-  font-family: var(--font-sans);
+  font-family: var(--font-ui);
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-.arabic {
-  font-family: var(--font-arabic);
-  direction: rtl;
-  unicode-bidi: isolate;
-  line-height: 1.9;
-  font-feature-settings: "liga", "calt", "mark", "mkmk";
+button,
+a,
+input {
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* Amiri Quran fehlt U+065E (Fatha mit zwei Punkten, offenes Tanwin im Mushaf-Text) → Wörter damit in Scheherazade New setzen */
-.arabic-alt { font-family: var(--font-arabic-alt); }
+button,
+a {
+  touch-action: manipulation;
+}
 
-@keyframes pulse-ring {
-  0% { transform: scale(1); opacity: 0.45; }
-  100% { transform: scale(1.7); opacity: 0; }
-}
-.pulse-ring::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 9999px;
-  background: var(--color-warn);
-  animation: pulse-ring 1.4s ease-out infinite;
-}
 @keyframes rise {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: none; }
 }
 .rise { animation: rise 0.35s ease-out both; }
 
+
 :focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
+::selection {
+  color: var(--color-primary-strong);
+  background: #d5ece0;
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --color-bg: #101a17;
+    --color-surface: #182621;
+    --color-ink: #e7f1ec;
+    --color-muted: #9aaca4;
+    --color-line: #31443b;
+    --color-primary: #31856d;
+    --color-primary-strong: #65b99a;
+    --color-primary-soft: #203d33;
+    --color-gold: #d7b468;
+    --color-gold-soft: #392f1c;
+    --color-ok: #79c895;
+    --color-ok-soft: #20382a;
+    --color-warn: #e1967f;
+    --color-warn-soft: #392620;
+    --color-wrong: #ef6c6c;
+    --color-wrong-soft: #3c2225;
+    --shadow-card: 0 2px 6px rgb(0 0 0 / 0.12), 0 16px 38px -24px rgb(0 0 0 / 0.55);
+  }
+
+  html {
+    background: var(--color-bg);
+  }
+
+  body {
+    background:
+      radial-gradient(ellipse at 50% -18rem, rgb(38 80 61 / 0.34), transparent 38rem),
+      var(--color-bg);
+  }
+
+  ::selection {
+    color: #e7f1ec;
+    background: #315b49;
+  }
 }
