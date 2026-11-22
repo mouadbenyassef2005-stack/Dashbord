@@ -7,6 +7,7 @@ npm install
 npm run dev        # http://localhost:3000
 npm test           # Lernlogik, Inhalte, Handschrift (Vitest)
 npm run typecheck && npm run lint && npm run build
+npm run build:html   # erzeugt arabisch-lektion-1.html (eine Datei, offline, per Doppelklick)
 node scripts/e2e-lektion.mjs http://localhost:3000 ./screenshots   # Browser-Durchlauf aller Phasen
 ```
 
